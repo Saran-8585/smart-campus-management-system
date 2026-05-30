@@ -14,6 +14,8 @@ import AdminSubjects from './pages/admin/Subjects'
 import AdminNotices from './pages/admin/Notices'
 import AdminTimetable from './pages/admin/Timetable'
 import AdminReports from './pages/admin/Reports'
+import AdminNavigationHistory from './pages/admin/NavigationHistory'
+import AdminLostFoundPanel from './pages/admin/LostFoundPanel'
 
 // Faculty pages
 import FacultyDashboard from './pages/faculty/Dashboard'
@@ -29,6 +31,11 @@ import StudentAttendance from './pages/student/Attendance'
 import StudentMarks from './pages/student/Marks'
 import StudentNotices from './pages/student/Notices'
 import StudentProfile from './pages/student/Profile'
+
+// Shared pages
+import ClassroomStatus from './pages/ClassroomStatus'
+import CampusNavigation from './pages/CampusNavigation'
+import LostFound from './pages/LostFound'
 
 function DashboardRedirect() {
   return <Navigate to="/login" replace />
@@ -47,6 +54,9 @@ export default function App() {
         <Route path="notices" element={<AdminNotices />} />
         <Route path="timetable" element={<AdminTimetable />} />
         <Route path="reports" element={<AdminReports />} />
+        <Route path="classroom-status" element={<ClassroomStatus />} />
+        <Route path="navigation-history" element={<AdminNavigationHistory />} />
+        <Route path="lost-found" element={<AdminLostFoundPanel />} />
       </Route>
 
       {/* Faculty Routes */}
@@ -56,6 +66,9 @@ export default function App() {
         <Route path="marks" element={<FacultyMarks />} />
         <Route path="notices" element={<FacultyNotices />} />
         <Route path="students" element={<FacultyStudents />} />
+        <Route path="classroom-status" element={<ClassroomStatus />} />
+        <Route path="navigation" element={<CampusNavigation />} />
+        <Route path="lost-found" element={<LostFound />} />
       </Route>
 
       {/* Student Routes */}
@@ -66,6 +79,9 @@ export default function App() {
         <Route path="marks" element={<StudentMarks />} />
         <Route path="notices" element={<StudentNotices />} />
         <Route path="profile" element={<StudentProfile />} />
+        <Route path="classroom-status" element={<ClassroomStatus />} />
+        <Route path="navigation" element={<CampusNavigation />} />
+        <Route path="lost-found" element={<LostFound />} />
       </Route>
 
       <Route path="/" element={<DashboardRedirect />} />

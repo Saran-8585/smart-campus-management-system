@@ -3,10 +3,10 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, BookOpen, Bell, Calendar, BarChart3,
   ClipboardCheck, GraduationCap, UserCircle, LogOut, Menu, X,
-  ChevronRight
+  ChevronRight, Map, MapPin, Package, Clock
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-
+ 
 const roleMenus = {
   admin: [
     { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -15,6 +15,9 @@ const roleMenus = {
     { label: 'Notices', path: '/admin/notices', icon: Bell },
     { label: 'Timetable', path: '/admin/timetable', icon: Calendar },
     { label: 'Reports', path: '/admin/reports', icon: BarChart3 },
+    { label: 'Classroom Status', path: '/admin/classroom-status', icon: Clock },
+    { label: 'Navigation History', path: '/admin/navigation-history', icon: Map },
+    { label: 'Lost & Found', path: '/admin/lost-found', icon: Package },
   ],
   faculty: [
     { label: 'Dashboard', path: '/faculty', icon: LayoutDashboard },
@@ -22,6 +25,9 @@ const roleMenus = {
     { label: 'Marks', path: '/faculty/marks', icon: GraduationCap },
     { label: 'Notices', path: '/faculty/notices', icon: Bell },
     { label: 'Students', path: '/faculty/students', icon: Users },
+    { label: 'Classroom Status', path: '/faculty/classroom-status', icon: Clock },
+    { label: 'Navigation', path: '/faculty/navigation', icon: Map },
+    { label: 'Lost & Found', path: '/faculty/lost-found', icon: Package },
   ],
   student: [
     { label: 'Dashboard', path: '/student', icon: LayoutDashboard },
@@ -30,6 +36,9 @@ const roleMenus = {
     { label: 'Marks', path: '/student/marks', icon: GraduationCap },
     { label: 'Notices', path: '/student/notices', icon: Bell },
     { label: 'Profile', path: '/student/profile', icon: UserCircle },
+    { label: 'Classroom Status', path: '/student/classroom-status', icon: Clock },
+    { label: 'Navigation', path: '/student/navigation', icon: Map },
+    { label: 'Lost & Found', path: '/student/lost-found', icon: Package },
   ],
 }
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, Plus, X, Loader2, UserCheck, UserX } from 'lucide-react'
+import { Search, Plus, X, Loader2, UserCheck, UserX, Users } from 'lucide-react'
 import api from '../../utils/axios'
 import toast from 'react-hot-toast'
 
@@ -12,7 +12,7 @@ export default function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'student', department: '', phone: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'student', department: '', phone: '', register_number: '', staff_id: '' })
   const [saving, setSaving] = useState(false)
 
   const fetchUsers = () => {
@@ -33,13 +33,13 @@ export default function AdminUsers() {
 
   const openAdd = () => {
     setEditing(null)
-    setForm({ name: '', email: '', password: '', role: 'student', department: '', phone: '' })
+    setForm({ name: '', email: '', password: '', role: 'student', department: '', phone: '', register_number: '', staff_id: '' })
     setShowForm(true)
   }
 
   const openEdit = (user) => {
     setEditing(user)
-    setForm({ name: user.name, email: user.email, password: '', role: user.role, department: user.department || '', phone: user.phone || '' })
+    setForm({ name: user.name, email: user.email, password: '', role: user.role, department: user.department || '', phone: user.phone || '', register_number: user.register_number || '', staff_id: user.staff_id || '' })
     setShowForm(true)
   }
 
@@ -121,6 +121,7 @@ export default function AdminUsers() {
                 <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">ID</th>
                   <th className="px-4 py-3">Role</th>
                   <th className="px-4 py-3">Department</th>
                   <th className="px-4 py-3">Status</th>
@@ -132,6 +133,7 @@ export default function AdminUsers() {
                   <tr key={u.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{u.name}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{u.email}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500">{u.register_number || u.staff_id || '-'}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium capitalize ${
                         u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
@@ -203,6 +205,20 @@ export default function AdminUsers() {
                 <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
               </div>
+              {form.role === 'student' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Register Number</label>
+                  <input value={form.register_number} onChange={(e) => setForm({ ...form, register_number: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
+                </div>
+              )}
+              {(form.role === 'faculty' || form.role === 'admin') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Staff ID</label>
+                  <input value={form.staff_id} onChange={(e) => setForm({ ...form, staff_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-3 mt-6">
               <button onClick={() => setShowForm(false)}

@@ -25,6 +25,8 @@ function initTables() {
       role TEXT NOT NULL CHECK(role IN ('admin','faculty','student')),
       department TEXT,
       phone TEXT,
+      register_number TEXT UNIQUE,
+      staff_id TEXT UNIQUE,
       active INTEGER DEFAULT 1,
       created_at TEXT DEFAULT (datetime('now'))
     );
@@ -46,7 +48,13 @@ function initTables() {
       start_time TEXT NOT NULL,
       end_time TEXT NOT NULL,
       room TEXT NOT NULL,
-      semester INTEGER NOT NULL
+      semester INTEGER NOT NULL,
+      faculty_name TEXT,
+      department TEXT,
+      section TEXT,
+      is_active INTEGER DEFAULT 1,
+      deactivated_at TEXT,
+      updated_by INTEGER REFERENCES users(id)
     );
 
     CREATE TABLE IF NOT EXISTS attendance (
@@ -84,7 +92,70 @@ function initTables() {
       subject_id INTEGER NOT NULL REFERENCES subjects(id),
       UNIQUE(student_id, subject_id)
     );
+
+    CREATE TABLE IF NOT EXISTS navigation_places (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      block TEXT,
+      floor TEXT,
+      description TEXT,
+      landmark_hint TEXT,
+      directions_from_gate TEXT,
+      map_x REAL DEFAULT 0,
+      map_y REAL DEFAULT 0,
+      category TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS navigation_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      search_query TEXT NOT NULL,
+      place_id INTEGER,
+      place_name TEXT,
+      searched_at TEXT DEFAULT (datetime('now')),
+      is_hidden INTEGER DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS lost_found_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      posted_by INTEGER NOT NULL REFERENCES users(id),
+      type TEXT NOT NULL CHECK(type IN ('Lost','Found')),
+      item_name TEXT NOT NULL,
+      description TEXT,
+      category TEXT DEFAULT 'Other',
+      date_occurred TEXT,
+      location TEXT,
+      image_path TEXT,
+      contact_info TEXT,
+      where_item_now TEXT,
+      status TEXT DEFAULT 'Active' CHECK(status IN ('Active','Claimed','Expired')),
+      created_at TEXT DEFAULT (datetime('now')),
+      expires_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS lost_found_claims (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_id INTEGER NOT NULL REFERENCES lost_found_items(id),
+      claimant_id INTEGER NOT NULL REFERENCES users(id),
+      claim_description TEXT,
+      proof_image_path TEXT,
+      status TEXT DEFAULT 'Pending' CHECK(status IN ('Pending','Approved','Rejected')),
+      submitted_at TEXT DEFAULT (datetime('now')),
+      resolved_at TEXT
+    );
   `);
 }
+
+/*
+ * DATABASE NOTE:
+ * No table in this system uses hard DELETE.
+ * All records are soft-deleted or status-updated to preserve full history.
+ * - Timetable: is_active flag, deactivated_at timestamp
+ * - Navigation history: is_hidden flag
+ * - Lost & found items: status field (Active/Claimed/Expired)
+ * - Lost & found claims: status field (Pending/Approved/Rejected)
+ * - Users: active flag
+ */
 
 module.exports = { getDB };
