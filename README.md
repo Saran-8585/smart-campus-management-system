@@ -1,6 +1,6 @@
 # Smart Campus Digital System
 
-A full-stack web application for managing campus operations, built with the **MERN stack** (React.js, Node.js + Express, SQLite).
+A full-stack web application for managing campus operations, built with the **MERN stack** (MongoDB, Express, React, Node.js).
 
 ## Tech Stack
 
@@ -8,7 +8,7 @@ A full-stack web application for managing campus operations, built with the **ME
 |-------|-----------|
 | Frontend | React 19, Vite 8, Tailwind CSS 3, React Router 7 |
 | Backend | Node.js, Express 4 |
-| Database | SQLite via better-sqlite3 |
+| Database | MongoDB via Mongoose ODM |
 | Auth | JWT (jsonwebtoken + bcryptjs) |
 | File Upload | Multer |
 | Charts | Recharts |
@@ -22,14 +22,25 @@ smart-campus-digital-system/
 ├── backend/
 │   ├── controllers/        # Route handlers / business logic
 │   ├── db/
-│   │   ├── database.js     # DB initialization & schema
-│   │   └── seed.js         # Seed data script
+│   │   ├── mongoose.js     # MongoDB connection module
+│   │   ├── seed.js         # Seed data script
+│   │   └── migrate.js      # SQLite → MongoDB migration script
 │   ├── middleware/
 │   │   └── auth.js         # JWT authentication middleware
+│   ├── models/             # Mongoose schemas & models
+│   │   ├── User.js
+│   │   ├── Subject.js
+│   │   ├── Timetable.js
+│   │   ├── Attendance.js
+│   │   ├── Notice.js
+│   │   ├── Enrollment.js
+│   │   ├── NavigationPlace.js
+│   │   ├── NavigationHistory.js
+│   │   ├── LostFoundItem.js
+│   │   └── LostFoundClaim.js
 │   ├── routes/             # Express route definitions
 │   ├── uploads/
 │   │   └── lost-found/     # Uploaded item images
-│   ├── campus.db           # SQLite database (auto-generated)
 │   ├── index.js            # Server entry point
 │   └── package.json
 ├── frontend/
@@ -149,44 +160,51 @@ No table in the system uses hard DELETE. All records are soft-deleted or status-
 
 ## Database Schema
 
-### Users
-| Column | Type | Notes |
-|--------|------|-------|
-| id | INTEGER | PK |
-| name | TEXT | |
-| email | TEXT | UNIQUE |
-| password | TEXT | bcrypt hashed |
-| role | TEXT | admin / faculty / student |
-| department | TEXT | |
-| phone | TEXT | |
-| register_number | TEXT | UNIQUE — students only |
-| staff_id | TEXT | UNIQUE — faculty/admin |
-| active | INTEGER | 1 = active, 0 = deactivated |
-| created_at | TEXT | |
+The system uses **MongoDB** with **Mongoose ODM**. Each table is a Mongoose model in `backend/models/`. Every document has an `_id` (ObjectId, auto-generated) and a virtual `id` field (string) for backward compatibility.
 
-### Timetable
-| Column | Type | Notes |
-|--------|------|-------|
-| id | INTEGER | PK |
-| subject_id | INTEGER | FK → subjects |
-| day | TEXT | Monday–Friday |
-| start_time | TEXT | HH:MM format |
-| end_time | TEXT | HH:MM format |
-| room | TEXT | Classroom number |
-| semester | INTEGER | |
-| faculty_name | TEXT | Denormalized for history |
-| department | TEXT | |
-| section | TEXT | e.g. CSE-A |
-| is_active | INTEGER | 1 = active, 0 = historical |
-| deactivated_at | TEXT | Timestamp when deactivated |
-| updated_by | INTEGER | FK → users |
+### Users (`User.js`)
+| Field | Mongoose Type | Notes |
+|-------|---------------|-------|
+| `_id` | ObjectId | Auto-generated |
+| `name` | String | Required |
+| `email` | String | Unique, required |
+| `password` | String | bcrypt hashed |
+| `role` | String (enum) | admin / faculty / student |
+| `department` | String | |
+| `phone` | String | |
+| `register_number` | String | Unique sparse — students only |
+| `staff_id` | String | Unique sparse — faculty/admin |
+| `active` | Number (0/1) | 1 = active, 0 = deactivated |
+| `created_at` | Date | Default: now |
 
-Full schema reference in `backend/db/database.js`.
+### Timetable (`Timetable.js`)
+| Field | Mongoose Type | Notes |
+|-------|---------------|-------|
+| `_id` | ObjectId | Auto-generated |
+| `subject_id` | ObjectId (ref Subject) | |
+| `day` | String (enum) | Monday–Friday |
+| `start_time` | String | HH:MM |
+| `end_time` | String | HH:MM |
+| `room` | String | Classroom number |
+| `semester` | Number | |
+| `faculty_name` | String | Denormalized for history |
+| `department` | String | |
+| `section` | String | e.g. CSE-A |
+| `is_active` | Number (0/1) | 1 = active, 0 = historical |
+| `deactivated_at` | Date | |
+| `updated_by` | ObjectId (ref User) | |
 
-### Additional Tables
-- `subjects`, `attendance`, `marks`, `notices`, `enrollments`
-- `navigation_places`, `navigation_history`
-- `lost_found_items`, `lost_found_claims`
+### All Models
+- **User** → `backend/models/User.js`
+- **Subject** → `backend/models/Subject.js`
+- **Timetable** → `backend/models/Timetable.js`
+- **Attendance** → `backend/models/Attendance.js`
+- **Notice** → `backend/models/Notice.js`
+- **Enrollment** → `backend/models/Enrollment.js`
+- **NavigationPlace** → `backend/models/NavigationPlace.js`
+- **NavigationHistory** → `backend/models/NavigationHistory.js`
+- **LostFoundItem** → `backend/models/LostFoundItem.js`
+- **LostFoundClaim** → `backend/models/LostFoundClaim.js`
 
 ---
 
@@ -260,6 +278,7 @@ Full schema reference in `backend/db/database.js`.
 ### Prerequisites
 - Node.js 18+
 - npm
+- MongoDB (local, Docker, or Atlas)
 
 ### Backend Setup
 
@@ -273,12 +292,23 @@ Create `.env` (already present with defaults):
 ```
 PORT=5000
 JWT_SECRET=smart_campus_jwt_secret_key_2024
+MONGO_URI=mongodb://localhost:27017/smart_campus
 ```
 
-Seed the database:
+Set `MONGO_URI` to your MongoDB connection string (local: `mongodb://localhost:27017/smart_campus`, Docker: same, Atlas: your cluster URI).
+
+**Option A — Seed fresh data:**
 
 ```bash
 npm run seed
+```
+
+**Option B — Migrate from existing SQLite database:**
+
+If you have a `backend/db/campus.db` from the previous SQLite version:
+
+```bash
+npm run migrate
 ```
 
 Start the server:
@@ -364,9 +394,10 @@ The seed script populates:
 
 ## Development Notes
 
-- The database file (`campus.db`) is created automatically in `backend/db/` when the server starts.
-- To reset all data, delete `backend/db/campus.db` and run `npm run seed` again.
+- MongoDB connection is configured via the `MONGO_URI` environment variable.
+- To reset all data, drop the database and run `npm run seed` again.
 - File uploads for Lost & Found are stored in `backend/uploads/lost-found/` and served via `express.static`.
 - The SVG campus map uses a 0–100 coordinate grid. Each place has `map_x` and `map_y` values for positioning.
 - Admin-only routes are protected with `requireRole('admin')` middleware.
 - All timetables use soft-deletes — no data is ever permanently deleted.
+- Lost & Found items auto-expire after 30 days (checked at server startup and hourly via `setInterval`).

@@ -3,23 +3,25 @@
                     SMART CAMPUS DIGITAL SYSTEM
 ================================================================================
 
-PK = Primary Key    |    FK = Foreign Key    |    UK = Unique Key
+Database: MongoDB via Mongoose ODM
+PK = _id (ObjectId, auto)   |   FK = ObjectId (ref)   |   UK = Unique Index
 
 
 ┌─────────────────────────────────────────────────┐
 │                   USERS                         │
 ├─────────────────────────────────────────────────┤
-│  PK │ id                  INTEGER  AUTO_INCREMENT│
-│     │ name                TEXT     NOT NULL      │
-│  UK │ email               TEXT     NOT NULL      │
-│     │ password            TEXT     NOT NULL      │
-│     │ role                TEXT     NOT NULL      │
-│     │ department          TEXT                   │
-│     │ phone               TEXT                   │
-│  UK │ register_number     TEXT     (student)     │
-│  UK │ staff_id            TEXT     (faculty/admin)│
-│     │ active              INTEGER  DEFAULT 1     │
-│     │ created_at          TEXT     DEFAULT now()  │
+│  PK │ _id                ObjectId  AUTO          │
+│     │ name                String   NOT NULL      │
+│  UK │ email               String   NOT NULL      │
+│     │ password            String   NOT NULL      │
+│     │ role                String   NOT NULL      │
+│     │                    (admin/faculty/student)  │
+│     │ department          String                 │
+│     │ phone               String                 │
+│  UK │ register_number     String   (student)     │
+│  UK │ staff_id            String   (faculty/admin)│
+│     │ active              Number   DEFAULT 1     │
+│     │ created_at          Date     DEFAULT now()  │
 └─────────────────────────────────────────────────┘
          │           │           │           │
          │FK         │FK         │           │
@@ -28,59 +30,72 @@ PK = Primary Key    |    FK = Foreign Key    |    UK = Unique Key
 ┌──────────────────┐  ┌──────────────────────┐  │
 │    SUBJECTS      │  │     TIMETABLE        │  │
 ├──────────────────┤  ├──────────────────────┤  │
-│ PK │ id          │  │ PK │ id              │  │
-│     │ name       │  │ FK │ subject_id      │  │
+│ PK │ _id         │  │ PK │ _id             │  │
+│     │ name       │  │ FK │ subject_id (ref)│  │
 │ UK  │ code       │  │     │ day            │  │
 │     │ department │  │     │ start_time     │  │
 │     │ semester   │  │     │ end_time       │  │
 │     │ credits    │  │     │ room           │  │
 │ FK  │ faculty_id─>──│     │ semester       │  │
-└──────────────────┘  │     │ faculty_name   │  │
-   │    │    │         │     │ department     │  │
-   │FK   │FK  │FK      │     │ section        │  │
-   │    │    │         │     │ is_active      │  │
-   ▼    ▼    ▼         │     │ deactivated_at │  │
-┌──────────────────┐  │ FK  │ updated_by─────>──│
+│     │ (ref User) │  │     │ faculty_name   │  │
+└──────────────────┘  │     │ department     │  │
+   │    │    │         │     │ section        │  │
+   │FK   │FK  │FK      │     │ is_active      │  │
+   │    │    │         │     │ deactivated_at │  │
+   ▼    ▼    ▼         │ FK  │ updated_by─────>──│
+┌──────────────────┐  │     │ (ref User)     │  │
 │   ATTENDANCE     │  └──────────────────────┘  │
 ├──────────────────┤                            │
-│ PK │ id          │                            │
+│ PK │ _id         │                            │
 │ FK │ student_id──────>─────────────────────────│
+│     │ (ref User) │                            │
 │ FK │ subject_id──>───│──────────│──────────────│
-│     │ date            │          │             │
-│     │ status          │          │             │
-│     │ (Present,       │          │             │
-│     │  Absent, Late)  │          │             │
+│     │ (ref Subj)  │   │          │             │
+│     │ date (String)│  │          │             │
+│     │ status      │   │          │             │
+│     │ (Present,   │   │          │             │
+│     │  Absent, Late) │          │             │
+│ UK  │ (student_id + │   │          │             │
+│     │  subject_id + │   │          │             │
+│     │  date)        │   │          │             │
 └──────────────────┘   │          │             │
                         │          │             │
 ┌──────────────────┐   │          │             │
 │  ⚠ MARKS         │   │          │             │
 │  (Planned — not  │   │          │             │
-│   yet implemented)│   │          │             │
+│   yet implemented)│  │          │             │
 ├──────────────────┤   │          │             │
-│ PK │ id          │   │          │             │
+│ PK │ _id         │   │          │             │
 │ FK │ student_id──────>──────────│──────────────│
+│     │ (ref User) │   │          │             │
 │ FK │ subject_id──>───│──────────│──────────────│
-│     │ exam_type       │          │             │
-│     │ score           │          │             │
-│     │ max_score       │          │             │
+│     │ (ref Subj)  │   │          │             │
+│     │ exam_type   │   │          │             │
+│     │ score       │   │          │             │
+│     │ max_score   │   │          │             │
 └──────────────────┘   │          │             │
                         │          │             │
 ┌──────────────────┐   │          │             │
 │   ENROLLMENTS    │   │          │             │
 ├──────────────────┤   │          │             │
-│ PK │ id          │   │          │             │
+│ PK │ _id         │   │          │             │
 │ FK │ student_id──────>──────────│──────────────│
+│     │ (ref User) │   │          │             │
 │ FK │ subject_id──>───│──────────│──────────────│
+│     │ (ref Subj)  │   │          │             │
+│ UK  │ (student_id + │  │          │             │
+│     │  subject_id)  │  │          │             │
 └──────────────────┘   │          │             │
                         │          │             │
 ┌──────────────────┐   │          │             │
 │     NOTICES      │   │          │             │
 ├──────────────────┤   │          │             │
-│ PK │ id          │   │          │             │
+│ PK │ _id         │   │          │             │
 │     │ title      │   │          │             │
 │     │ body       │   │          │             │
 │     │ category   │   │          │             │
 │ FK  │ posted_by──────>──────────│──────────────│
+│     │ (ref User)  │  │          │             │
 │     │ target_role│   │          │             │
 │     │ created_at │   │          │             │
 └──────────────────┘   │          │             │
@@ -88,7 +103,7 @@ PK = Primary Key    |    FK = Foreign Key    |    UK = Unique Key
 ┌──────────────────┐   │          │             │
 │ NAVIGATION_PLACES│   │          │             │
 ├──────────────────┤   │          │             │
-│ PK │ id          │   │          │             │
+│ PK │ _id         │   │          │             │
 │     │ name       │   │          │             │
 │     │ block      │   │          │             │
 │     │ floor      │   │          │             │
@@ -103,8 +118,9 @@ PK = Primary Key    |    FK = Foreign Key    |    UK = Unique Key
 ┌──────────────────┐   │          │             │
 │NAVIGATION_HISTORY│   │          │             │
 ├──────────────────┤   │          │             │
-│ PK │ id          │   │          │             │
+│ PK │ _id         │   │          │             │
 │ FK │ user_id        >───────────│──────────────│
+│     │ (ref User)  │   │          │             │
 │     │ search_query│   │          │             │
 │     │ place_id    │   │          │             │
 │     │ place_name  │   │          │             │
@@ -115,8 +131,9 @@ PK = Primary Key    |    FK = Foreign Key    |    UK = Unique Key
 ┌──────────────────┐   │          │             │
 │ LOST_FOUND_ITEMS │   │          │             │
 ├──────────────────┤   │          │             │
-│ PK │ id          │   │          │             │
+│ PK │ _id         │   │          │             │
 │ FK │ posted_by──────>──────────│──────────────│
+│     │ (ref User)  │  │          │             │
 │     │ type        │   │          │             │
 │     │ item_name   │   │          │             │
 │     │ description │   │          │             │
@@ -135,11 +152,13 @@ PK = Primary Key    |    FK = Foreign Key    |    UK = Unique Key
 ┌──────────────────┐   │          │             │
 │LOST_FOUND_CLAIMS │   │          │             │
 ├──────────────────┤   │          │             │
-│ PK │ id          │   │          │             │
-│ FK │ item_id     │   │          │             │
+│ PK │ _id         │   │          │             │
+│ FK │ item_id        │   │          │             │
+│     │ (ref LFI)   │   │          │             │
 │ FK │ claimant_id──────>──────────│──────────────│
-│     │ claim_description         │             │
-│     │ proof_image_path          │             │
+│     │ (ref User)  │   │          │             │
+│     │ claim_descr │   │          │             │
+│     │ proof_image │   │          │             │
 │     │ status      │   │          │             │
 │     │ submitted_at│   │          │             │
 │     │ resolved_at │   │          │             │

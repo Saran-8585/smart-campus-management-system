@@ -1,62 +1,80 @@
 const bcrypt = require('bcryptjs');
-const { getDB } = require('../db/database');
+const User = require('../models/User');
 
-function getAll(req, res) {
-  const db = getDB();
-  const { role } = req.query;
-  let query = 'SELECT id, name, email, role, department, phone, register_number, staff_id, active, created_at FROM users';
-  const params = [];
-  if (role) {
-    query += ' WHERE role = ?';
-    params.push(role);
+async function getAll(req, res) {
+  try {
+    const { role } = req.query;
+    const filter = {};
+    if (role) filter.role = role;
+    const users = await User.find(filter).select('id name email role department phone register_number staff_id active created_at').sort({ created_at: -1 });
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  query += ' ORDER BY created_at DESC';
-  const users = db.prepare(query).all(...params);
-  res.json(users);
 }
 
-function create(req, res) {
-  const db = getDB();
-  const { name, email, password, role, department, phone, register_number, staff_id } = req.body;
-  if (!name || !email || !password || !role) {
-    return res.status(400).json({ error: 'Name, email, password, and role are required' });
+async function create(req, res) {
+  try {
+    const { name, email, password, role, department, phone, register_number, staff_id } = req.body;
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ error: 'Name, email, password, and role are required' });
+    }
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      name, email, password: hashed, role,
+      department: department || null,
+      phone: phone || null,
+      register_number: register_number || null,
+      staff_id: staff_id || null,
+    });
+    const returned = await User.findById(user._id).select('id name email role department phone register_number staff_id active created_at');
+    res.status(201).json(returned);
+  } catch (err) {
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyPattern)[0];
+      return res.status(400).json({ error: `${field} already exists` });
+    }
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  if (existing) {
-    return res.status(400).json({ error: 'Email already exists' });
-  }
-  const hashed = bcrypt.hashSync(password, 10);
-  const info = db.prepare(
-    'INSERT INTO users (name, email, password, role, department, phone, register_number, staff_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(name, email, hashed, role, department || null, phone || null, register_number || null, staff_id || null);
-  const user = db.prepare('SELECT id, name, email, role, department, phone, register_number, staff_id, active, created_at FROM users WHERE id = ?').get(info.lastInsertRowid);
-  res.status(201).json(user);
 }
 
-function update(req, res) {
-  const db = getDB();
-  const { id } = req.params;
-  const { name, email, password, role, department, phone, active, register_number, staff_id } = req.body;
-  const existing = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
-  if (!existing) return res.status(404).json({ error: 'User not found' });
+async function update(req, res) {
+  try {
+    const { id } = req.params;
+    const existing = await User.findById(id);
+    if (!existing) return res.status(404).json({ error: 'User not found' });
 
-  const updates = [];
-  const params = [];
-  if (name !== undefined) { updates.push('name = ?'); params.push(name); }
-  if (email !== undefined) { updates.push('email = ?'); params.push(email); }
-  if (password) { updates.push('password = ?'); params.push(bcrypt.hashSync(password, 10)); }
-  if (role !== undefined) { updates.push('role = ?'); params.push(role); }
-  if (department !== undefined) { updates.push('department = ?'); params.push(department); }
-  if (phone !== undefined) { updates.push('phone = ?'); params.push(phone); }
-  if (active !== undefined) { updates.push('active = ?'); params.push(active ? 1 : 0); }
-  if (register_number !== undefined) { updates.push('register_number = ?'); params.push(register_number); }
-  if (staff_id !== undefined) { updates.push('staff_id = ?'); params.push(staff_id); }
-  if (updates.length === 0) return res.status(400).json({ error: 'No fields to update' });
+    const { name, email, password, role, department, phone, active, register_number, staff_id } = req.body;
+    const updates = {};
+    if (name !== undefined) updates.name = name;
+    if (email !== undefined) updates.email = email;
+    if (password) updates.password = await bcrypt.hash(password, 10);
+    if (role !== undefined) updates.role = role;
+    if (department !== undefined) updates.department = department;
+    if (phone !== undefined) updates.phone = phone;
+    if (active !== undefined) updates.active = active ? 1 : 0;
+    if (register_number !== undefined) updates.register_number = register_number;
+    if (staff_id !== undefined) updates.staff_id = staff_id;
 
-  params.push(id);
-  db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...params);
-  const user = db.prepare('SELECT id, name, email, role, department, phone, register_number, staff_id, active, created_at FROM users WHERE id = ?').get(id);
-  res.json(user);
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No fields to update' });
+
+    await User.findByIdAndUpdate(id, updates);
+    const user = await User.findById(id).select('id name email role department phone register_number staff_id active created_at');
+    res.json(user);
+  } catch (err) {
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyPattern)[0];
+      return res.status(400).json({ error: `${field} already exists` });
+    }
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 }
 
 module.exports = { getAll, create, update };

@@ -1,126 +1,153 @@
-const { getDB } = require('../db/database');
+const Timetable = require('../models/Timetable');
+const Subject = require('../models/Subject');
+const Enrollment = require('../models/Enrollment');
 
-function getTimetable(req, res) {
-  const db = getDB();
-  const user = req.user;
-  const includeInactive = req.query.include_inactive === 'true';
-  let activeFilter = includeInactive ? '' : ' AND t.is_active = 1';
-  let rows;
+async function getTimetable(req, res) {
+  try {
+    const user = req.user;
+    const includeInactive = req.query.include_inactive === 'true';
+    const activeFilter = includeInactive ? {} : { is_active: 1 };
+    let rows;
 
-  if (user.role === 'admin') {
-    rows = db.prepare(`
-      SELECT t.*, s.name AS subject_name, s.code AS subject_code, s.semester,
-             u.name AS faculty_name
-      FROM timetable t
-      JOIN subjects s ON s.id = t.subject_id
-      LEFT JOIN users u ON s.faculty_id = u.id
-      WHERE 1=1${activeFilter}
-      ORDER BY t.day, t.start_time
-    `).all();
-  } else if (user.role === 'faculty') {
-    rows = db.prepare(`
-      SELECT t.*, s.name AS subject_name, s.code AS subject_code, s.semester
-      FROM timetable t
-      JOIN subjects s ON s.id = t.subject_id
-      WHERE s.faculty_id = ?${activeFilter}
-      ORDER BY t.day, t.start_time
-    `).all(user.id);
-  } else {
-    rows = db.prepare(`
-      SELECT t.*, s.name AS subject_name, s.code AS subject_code, s.semester,
-             u.name AS faculty_name
-      FROM timetable t
-      JOIN subjects s ON s.id = t.subject_id
-      JOIN enrollments e ON e.subject_id = s.id
-      LEFT JOIN users u ON s.faculty_id = u.id
-      WHERE e.student_id = ?${activeFilter}
-      ORDER BY t.day, t.start_time
-    `).all(user.id);
+    if (user.role === 'admin') {
+      rows = await Timetable.find(activeFilter)
+        .populate('subject_id', 'name code semester')
+        .populate({ path: 'subject_id', populate: { path: 'faculty_id', select: 'name' } })
+        .sort({ day: 1, start_time: 1 });
+    } else if (user.role === 'faculty') {
+      const subjects = await Subject.find({ faculty_id: user.id }).distinct('_id');
+      rows = await Timetable.find({ ...activeFilter, subject_id: { $in: subjects } })
+        .populate('subject_id', 'name code semester')
+        .sort({ day: 1, start_time: 1 });
+    } else {
+      const enrollments = await Enrollment.find({ student_id: user.id }).distinct('subject_id');
+      rows = await Timetable.find({ ...activeFilter, subject_id: { $in: enrollments } })
+        .populate('subject_id', 'name code semester')
+        .populate({ path: 'subject_id', populate: { path: 'faculty_id', select: 'name' } })
+        .sort({ day: 1, start_time: 1 });
+    }
+
+    const mapped = rows.map(t => ({
+      id: t.id, _id: t._id, subject_id: t.subject_id?._id || t.subject_id,
+      subject_name: t.subject_id?.name || null, subject_code: t.subject_id?.code || null,
+      semester: t.semester, day: t.day, start_time: t.start_time, end_time: t.end_time,
+      room: t.room, faculty_name: t.subject_id?.faculty_id?.name || t.faculty_name || null,
+      department: t.department, section: t.section, is_active: t.is_active,
+      deactivated_at: t.deactivated_at, updated_by: t.updated_by,
+    }));
+    res.json(mapped);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  res.json(rows);
 }
 
-function checkConflict(db, day, start_time, end_time, room, excludeId) {
-  const conflict = db.prepare(`
-    SELECT id FROM timetable
-    WHERE day = ? AND room = ? AND is_active = 1
-    AND start_time < ? AND end_time > ?
-    ${excludeId ? 'AND id != ?' : ''}
-    LIMIT 1
-  `).get(day, room, end_time, start_time, ...(excludeId ? [excludeId] : []));
+async function checkConflict(day, start_time, end_time, room, excludeId) {
+  const filter = { day, room, is_active: 1, start_time: { $lt: end_time }, end_time: { $gt: start_time } };
+  if (excludeId) filter._id = { $ne: excludeId };
+  const conflict = await Timetable.findOne(filter).select('_id');
   return !!conflict;
 }
 
-function create(req, res) {
-  const db = getDB();
-  const { subject_id, day, start_time, end_time, room, semester, faculty_name, department, section } = req.body;
-  if (!subject_id || !day || !start_time || !end_time || !room || !semester) {
-    return res.status(400).json({ error: 'All fields are required' });
+async function create(req, res) {
+  try {
+    const { subject_id, day, start_time, end_time, room, semester, faculty_name, department, section } = req.body;
+    if (!subject_id || !day || !start_time || !end_time || !room || !semester) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+    if (await checkConflict(day, start_time, end_time, room)) {
+      return res.status(409).json({ error: `Room ${room} already has a class scheduled during this time on ${day}` });
+    }
+    const entry = await Timetable.create({
+      subject_id, day, start_time, end_time, room, semester,
+      faculty_name: faculty_name || null, department: department || null,
+      section: section || null, updated_by: req.user.id,
+    });
+    const populated = await Timetable.findById(entry._id).populate('subject_id', 'name code');
+    res.status(201).json({
+      id: populated.id, _id: populated._id, subject_id: populated.subject_id?._id || populated.subject_id,
+      subject_name: populated.subject_id?.name || null, subject_code: populated.subject_id?.code || null,
+      day: populated.day, start_time: populated.start_time, end_time: populated.end_time,
+      room: populated.room, semester: populated.semester, faculty_name: populated.faculty_name,
+      department: populated.department, section: populated.section, is_active: populated.is_active,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  if (checkConflict(db, day, start_time, end_time, room)) {
-    return res.status(409).json({ error: `Room ${room} already has a class scheduled during this time on ${day}` });
-  }
-  const info = db.prepare(
-    'INSERT INTO timetable (subject_id, day, start_time, end_time, room, semester, faculty_name, department, section, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(subject_id, day, start_time, end_time, room, semester, faculty_name || null, department || null, section || null, req.user.id);
-  const entry = db.prepare(`
-    SELECT t.*, s.name AS subject_name, s.code AS subject_code
-    FROM timetable t JOIN subjects s ON s.id = t.subject_id WHERE t.id = ?
-  `).get(info.lastInsertRowid);
-  res.status(201).json(entry);
 }
 
-function update(req, res) {
-  const db = getDB();
-  const { id } = req.params;
-  const existing = db.prepare('SELECT * FROM timetable WHERE id = ? AND is_active = 1').get(id);
-  if (!existing) return res.status(404).json({ error: 'Active timetable entry not found' });
+async function update(req, res) {
+  try {
+    const { id } = req.params;
+    const existing = await Timetable.findOne({ _id: id, is_active: 1 });
+    if (!existing) return res.status(404).json({ error: 'Active timetable entry not found' });
 
-  const { subject_id, day, start_time, end_time, room, semester, faculty_name, department, section } = req.body;
-  if (!subject_id || !day || !start_time || !end_time || !room || !semester) {
-    return res.status(400).json({ error: 'All fields are required' });
+    const { subject_id, day, start_time, end_time, room, semester, faculty_name, department, section } = req.body;
+    if (!subject_id || !day || !start_time || !end_time || !room || !semester) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    if (await checkConflict(day, start_time, end_time, room, id)) {
+      return res.status(409).json({ error: `Room ${room} already has a class scheduled during this time on ${day}` });
+    }
+
+    await Timetable.findByIdAndUpdate(id, { is_active: 0, deactivated_at: new Date() });
+
+    const entry = await Timetable.create({
+      subject_id, day, start_time, end_time, room, semester,
+      faculty_name: faculty_name || null, department: department || null,
+      section: section || null, updated_by: req.user.id,
+    });
+    const populated = await Timetable.findById(entry._id).populate('subject_id', 'name code');
+    res.json({
+      id: populated.id, _id: populated._id, subject_id: populated.subject_id?._id || populated.subject_id,
+      subject_name: populated.subject_id?.name || null, subject_code: populated.subject_id?.code || null,
+      day: populated.day, start_time: populated.start_time, end_time: populated.end_time,
+      room: populated.room, semester: populated.semester, faculty_name: populated.faculty_name,
+      department: populated.department, section: populated.section, is_active: populated.is_active,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  if (checkConflict(db, day, start_time, end_time, room, id)) {
-    return res.status(409).json({ error: `Room ${room} already has a class scheduled during this time on ${day}` });
-  }
-
-  db.prepare("UPDATE timetable SET is_active = 0, deactivated_at = datetime('now') WHERE id = ?").run(id);
-
-  const info = db.prepare(
-    'INSERT INTO timetable (subject_id, day, start_time, end_time, room, semester, faculty_name, department, section, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(subject_id, day, start_time, end_time, room, semester, faculty_name || null, department || null, section || null, req.user.id);
-
-  const entry = db.prepare(`
-    SELECT t.*, s.name AS subject_name, s.code AS subject_code
-    FROM timetable t JOIN subjects s ON s.id = t.subject_id WHERE t.id = ?
-  `).get(info.lastInsertRowid);
-  res.json(entry);
 }
 
-function remove(req, res) {
-  const db = getDB();
-  const { id } = req.params;
-  const existing = db.prepare('SELECT id FROM timetable WHERE id = ?').get(id);
-  if (!existing) return res.status(404).json({ error: 'Timetable entry not found' });
-  db.prepare("UPDATE timetable SET is_active = 0, deactivated_at = datetime('now'), updated_by = ? WHERE id = ?").run(req.user.id, id);
-  res.json({ message: 'Entry deactivated' });
+async function remove(req, res) {
+  try {
+    const { id } = req.params;
+    const existing = await Timetable.findById(id);
+    if (!existing) return res.status(404).json({ error: 'Timetable entry not found' });
+    await Timetable.findByIdAndUpdate(id, { is_active: 0, deactivated_at: new Date(), updated_by: req.user.id });
+    res.json({ message: 'Entry deactivated' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 }
 
-function getHistory(req, res) {
-  const db = getDB();
-  const { room } = req.query;
-  if (!room) return res.status(400).json({ error: 'Room parameter is required' });
-  const rows = db.prepare(`
-    SELECT t.*, s.name AS subject_name, s.code AS subject_code, u.name AS updated_by_name
-    FROM timetable t
-    JOIN subjects s ON s.id = t.subject_id
-    LEFT JOIN users u ON u.id = t.updated_by
-    WHERE t.room = ?
-    ORDER BY t.id DESC
-  `).all(room);
-  res.json(rows);
+async function getHistory(req, res) {
+  try {
+    const { room } = req.query;
+    if (!room) return res.status(400).json({ error: 'Room parameter is required' });
+    const rows = await Timetable.find({ room })
+      .populate('subject_id', 'name code')
+      .populate('updated_by', 'name')
+      .sort({ _id: -1 });
+    const mapped = rows.map(t => ({
+      id: t.id, _id: t._id, subject_id: t.subject_id?._id || t.subject_id,
+      subject_name: t.subject_id?.name || null, subject_code: t.subject_id?.code || null,
+      day: t.day, start_time: t.start_time, end_time: t.end_time, room: t.room,
+      semester: t.semester, faculty_name: t.faculty_name, department: t.department,
+      section: t.section, is_active: t.is_active, deactivated_at: t.deactivated_at,
+      updated_by: t.updated_by?._id || t.updated_by,
+      updated_by_name: t.updated_by?.name || null,
+    }));
+    res.json(mapped);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 }
 
 module.exports = { getTimetable, create, update, remove, getHistory };

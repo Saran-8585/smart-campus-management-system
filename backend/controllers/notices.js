@@ -1,65 +1,72 @@
-const { getDB } = require('../db/database');
+const Notice = require('../models/Notice');
 
-function getAll(req, res) {
-  const db = getDB();
-  const user = req.user;
-  let notices;
+async function getAll(req, res) {
+  try {
+    const user = req.user;
+    let notices;
 
-  if (user.role === 'admin') {
-    notices = db.prepare(`
-      SELECT n.*, u.name AS poster_name
-      FROM notices n
-      JOIN users u ON u.id = n.posted_by
-      WHERE n.active = 1
-      ORDER BY n.created_at DESC
-    `).all();
-  } else if (user.role === 'faculty') {
-    notices = db.prepare(`
-      SELECT n.*, u.name AS poster_name
-      FROM notices n
-      JOIN users u ON u.id = n.posted_by
-      WHERE n.active = 1 AND n.target_role IN ('all', 'faculty')
-      ORDER BY n.created_at DESC
-    `).all();
-  } else {
-    notices = db.prepare(`
-      SELECT n.*, u.name AS poster_name
-      FROM notices n
-      JOIN users u ON u.id = n.posted_by
-      WHERE n.active = 1 AND n.target_role IN ('all', 'student')
-      ORDER BY n.created_at DESC
-    `).all();
+    if (user.role === 'admin') {
+      notices = await Notice.find({ active: 1 }).populate('posted_by', 'name').sort({ created_at: -1 });
+    } else if (user.role === 'faculty') {
+      notices = await Notice.find({ active: 1, target_role: { $in: ['all', 'faculty'] } })
+        .populate('posted_by', 'name').sort({ created_at: -1 });
+    } else {
+      notices = await Notice.find({ active: 1, target_role: { $in: ['all', 'student'] } })
+        .populate('posted_by', 'name').sort({ created_at: -1 });
+    }
+
+    const mapped = notices.map(n => ({
+      id: n.id, _id: n._id, title: n.title, body: n.body, category: n.category,
+      posted_by: n.posted_by?._id || n.posted_by,
+      poster_name: n.posted_by?.name || null,
+      target_role: n.target_role, active: n.active, created_at: n.created_at,
+    }));
+    res.json(mapped);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  res.json(notices);
 }
 
-function create(req, res) {
-  const db = getDB();
-  const { title, body, category, target_role } = req.body;
-  if (!title || !body || !category) {
-    return res.status(400).json({ error: 'Title, body, and category are required' });
+async function create(req, res) {
+  try {
+    const { title, body, category, target_role } = req.body;
+    if (!title || !body || !category) {
+      return res.status(400).json({ error: 'Title, body, and category are required' });
+    }
+    const validCategories = ['Exam', 'Event', 'Holiday', 'General'];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+
+    const notice = await Notice.create({
+      title, body, category, posted_by: req.user.id,
+      target_role: target_role || 'all',
+    });
+    const populated = await Notice.findById(notice._id).populate('posted_by', 'name');
+    res.status(201).json({
+      id: populated.id, _id: populated._id, title: populated.title, body: populated.body,
+      category: populated.category, posted_by: populated.posted_by?._id || populated.posted_by,
+      poster_name: populated.posted_by?.name || null,
+      target_role: populated.target_role, active: populated.active, created_at: populated.created_at,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  const validCategories = ['Exam', 'Event', 'Holiday', 'General'];
-  if (!validCategories.includes(category)) {
-    return res.status(400).json({ error: 'Invalid category' });
-  }
-  const info = db.prepare(
-    'INSERT INTO notices (title, body, category, posted_by, target_role) VALUES (?, ?, ?, ?, ?)'
-  ).run(title, body, category, req.user.id, target_role || 'all');
-  const notice = db.prepare(`
-    SELECT n.*, u.name AS poster_name
-    FROM notices n JOIN users u ON u.id = n.posted_by WHERE n.id = ?
-  `).get(info.lastInsertRowid);
-  res.status(201).json(notice);
 }
 
-function remove(req, res) {
-  const db = getDB();
-  const { id } = req.params;
-  const existing = db.prepare('SELECT id FROM notices WHERE id = ?').get(id);
-  if (!existing) return res.status(404).json({ error: 'Notice not found' });
-  db.prepare("UPDATE notices SET active = 0 WHERE id = ?").run(id);
-  res.json({ message: 'Notice deleted' });
+async function remove(req, res) {
+  try {
+    const { id } = req.params;
+    const existing = await Notice.findById(id);
+    if (!existing) return res.status(404).json({ error: 'Notice not found' });
+    await Notice.findByIdAndUpdate(id, { active: 0 });
+    res.json({ message: 'Notice deleted' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 }
 
 module.exports = { getAll, create, remove };

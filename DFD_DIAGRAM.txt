@@ -355,17 +355,20 @@ DATA FLOWS:        (labeled arrows showing data movement)
                             DATA STORES INDEX
 ================================================================================
 
-    D1  ── USERS                (id, name, email, password, role, ...)
-    D2  ── SUBJECTS             (id, name, code, department, faculty_id, ...)
-    D3  ── TIMETABLE            (id, subject_id, day, time, room, is_active, ...)
-    D4  ── ATTENDANCE           (id, student_id, subject_id, date, status)
-    D5  ── ⚠ MARKS              (id, student_id, subject_id, exam_type, score, ...)
-    D6  ── NOTICES              (id, title, body, category, posted_by, ...)
-    D7  ── ENROLLMENTS          (id, student_id, subject_id)
-    D8  ── NAVIGATION_PLACES    (id, name, block, floor, directions, map_x/y, ...)
-    D9  ── LOST_FOUND_ITEMS     (id, posted_by, type, item_name, date_occurred, location, image_path, where_item_now, status, created_at, expires_at, ...)
-    D10 ─ LOST_FOUND_CLAIMS    (id, item_id, claimant_id, claim_description, proof_image_path, status, submitted_at, resolved_at)
-    D11 ─ NAVIGATION_HISTORY   (id, user_id, search_query, place_id, place_name, searched_at, is_hidden)
+  All data stores are MongoDB collections backed by Mongoose models.
+  PK = _id (ObjectId, auto). FK = ObjectId ref to another collection.
+
+    D1  ── USERS                (_id, name, email, password, role, ...)
+    D2  ── SUBJECTS             (_id, name, code, department, faculty_id, ...)
+    D3  ── TIMETABLE            (_id, subject_id, day, time, room, is_active, ...)
+    D4  ── ATTENDANCE           (_id, student_id, subject_id, date, status)
+    D5  ── ⚠ MARKS              (_id, student_id, subject_id, exam_type, score, ...)
+    D6  ── NOTICES              (_id, title, body, category, posted_by, ...)
+    D7  ── ENROLLMENTS          (_id, student_id, subject_id)
+    D8  ── NAVIGATION_PLACES    (_id, name, block, floor, directions, map_x/y, ...)
+    D9  ── LOST_FOUND_ITEMS     (_id, posted_by, type, item_name, date_occurred, location, image_path, where_item_now, status, created_at, expires_at, ...)
+    D10 ─ LOST_FOUND_CLAIMS    (_id, item_id, claimant_id, claim_description, proof_image_path, status, submitted_at, resolved_at)
+    D11 ─ NAVIGATION_HISTORY   (_id, user_id, search_query, place_id, place_name, searched_at, is_hidden)
 
 
 ================================================================================
@@ -380,7 +383,7 @@ DATA FLOWS:        (labeled arrows showing data movement)
    │  PROCESS     │
    └──────┬───────┘
 
-   ┌──────────────┐   Data Store (Database Table)
+   ┌──────────────┐   Data Store (MongoDB Collection)
    │  D#: STORE   │
    └──────────────┘
 

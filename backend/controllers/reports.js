@@ -1,20 +1,64 @@
-const { getDB } = require('../db/database');
+const Attendance = require('../models/Attendance');
+const Subject = require('../models/Subject');
 
-function attendanceSummary(req, res) {
-  const db = getDB();
-  const summary = db.prepare(`
-    SELECT s.id, s.name AS subject_name, s.code,
-           COUNT(a.id) AS total,
-           SUM(CASE WHEN a.status = 'Present' THEN 1 ELSE 0 END) AS present,
-           SUM(CASE WHEN a.status = 'Absent' THEN 1 ELSE 0 END) AS absent,
-           SUM(CASE WHEN a.status = 'Late' THEN 1 ELSE 0 END) AS late,
-           ROUND(CAST(SUM(CASE WHEN a.status IN ('Present','Late') THEN 1 ELSE 0 END) AS REAL) / COUNT(a.id) * 100, 1) AS percentage
-    FROM subjects s
-    JOIN attendance a ON a.subject_id = s.id
-    GROUP BY s.id
-    ORDER BY s.name
-  `).all();
-  res.json(summary);
+async function attendanceSummary(req, res) {
+  try {
+    const summary = await Attendance.aggregate([
+      {
+        $group: {
+          _id: '$subject_id',
+          total: { $sum: 1 },
+          present: { $sum: { $cond: [{ $eq: ['$status', 'Present'] }, 1, 0] } },
+          absent: { $sum: { $cond: [{ $eq: ['$status', 'Absent'] }, 1, 0] } },
+          late: { $sum: { $cond: [{ $eq: ['$status', 'Late'] }, 1, 0] } },
+        },
+      },
+      {
+        $lookup: {
+          from: 'subjects',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'subject',
+        },
+      },
+      { $unwind: '$subject' },
+      {
+        $addFields: {
+          percentage: {
+            $round: [
+              {
+                $multiply: [
+                  { $divide: [{ $add: ['$present', '$late'] }, '$total'] },
+                  100,
+                ],
+              },
+              1,
+            ],
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          id: { $toString: '$_id' },
+          subject_id: '$_id',
+          subject_name: '$subject.name',
+          code: '$subject.code',
+          total: 1,
+          present: 1,
+          absent: 1,
+          late: 1,
+          percentage: 1,
+        },
+      },
+      { $sort: { subject_name: 1 } },
+    ]);
+
+    res.json(summary);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 }
 
 module.exports = { attendanceSummary };
