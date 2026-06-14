@@ -74,6 +74,7 @@ export default function AdminTimetable() {
 
   const handleSave = async () => {
     if (!form.subject_id || !form.room) { toast.error('Subject and room are required'); return }
+    if (form.start_time >= form.end_time) { toast.error('End time must be after start time'); return }
     setSaving(true)
     try {
       if (editing) {

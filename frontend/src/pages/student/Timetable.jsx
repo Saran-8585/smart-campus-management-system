@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Loader2, Calendar } from 'lucide-react'
 import api from '../../utils/axios'
+import toast from 'react-hot-toast'
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+const dayMap = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday' }
 
 export default function StudentTimetable() {
   const [timetable, setTimetable] = useState([])
@@ -11,7 +13,7 @@ export default function StudentTimetable() {
   useEffect(() => {
     api.get('/timetable')
       .then((res) => setTimetable(res.data))
-      .catch(() => {})
+      .catch(() => toast.error('Failed to load timetable'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -43,7 +45,7 @@ export default function StudentTimetable() {
             {groupedByDay.map(({ day, entries }) => (
               <div key={day} className="bg-white">
                 <div className={`text-center py-3 text-sm font-semibold ${
-                  day === days[new Date().getDay() === 0 ? 5 : new Date().getDay() - 1]
+                  day === dayMap[new Date().getDay()]
                     ? 'bg-primary-700 text-white'
                     : 'bg-gray-100 text-gray-700'
                 }`}>{day}</div>

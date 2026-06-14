@@ -57,7 +57,7 @@ function getAllHistory(req, res) {
   if (search_query) { query += ' AND nh.search_query LIKE ?'; params.push(`%${search_query}%`); }
   if (date_from) { query += ' AND nh.searched_at >= ?'; params.push(date_from); }
   if (date_to) { query += ' AND nh.searched_at <= ?'; params.push(date_to); }
-  query += ' ORDER BY nh.searched_at DESC';
+  query += ' ORDER BY nh.searched_at DESC LIMIT 100';
   const rows = db.prepare(query).all(...params);
   res.json(rows);
 }

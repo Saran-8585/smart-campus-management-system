@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Calendar, ClipboardCheck, Bell, GraduationCap, Loader2 } from 'lucide-react'
+import { Calendar, ClipboardCheck, Bell, Loader2 } from 'lucide-react'
 import api from '../../utils/axios'
 import { useAuth } from '../../context/AuthContext'
+import toast from 'react-hot-toast'
 
-const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+const dayMap = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday' }
 const categoryColors = {
   Exam: 'bg-red-100 text-red-700',
   Event: 'bg-blue-100 text-blue-700',
@@ -16,27 +17,25 @@ export default function StudentDashboard() {
   const [timetable, setTimetable] = useState([])
   const [attendance, setAttendance] = useState([])
   const [notices, setNotices] = useState([])
-  const [marks, setMarks] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!user) return
     Promise.all([
       api.get('/timetable'),
       api.get(`/attendance/student/${user.id}`),
       api.get('/notices'),
-      api.get(`/marks/${user.id}`),
     ])
-      .then(([tt, att, not, mrk]) => {
+      .then(([tt, att, not]) => {
         setTimetable(tt.data)
         setAttendance(att.data)
         setNotices(not.data.slice(0, 5))
-        setMarks(mrk.data)
       })
-      .catch(() => {})
+      .catch(() => toast.error('Failed to load dashboard data'))
       .finally(() => setLoading(false))
-  }, [user.id])
+  }, [user?.id])
 
-  const today = days[new Date().getDay() === 0 ? 5 : new Date().getDay() - 1] || 'Monday'
+  const today = dayMap[new Date().getDay()] || 'Monday'
   const todayClasses = timetable.filter((t) => t.day === today)
 
   const attBySubject = {}
@@ -52,23 +51,6 @@ export default function StudentDashboard() {
     percentage: Math.round((data.present / data.total) * 100),
   }))
 
-  const marksBySubject = {}
-  marks.forEach((m) => {
-    if (!marksBySubject[m.subject_id]) marksBySubject[m.subject_id] = { name: m.subject_name, total: 0, earned: 0 }
-    marksBySubject[m.subject_id].total += m.max_score
-    marksBySubject[m.subject_id].earned += m.score
-  })
-
-  const gpas = Object.values(marksBySubject).map((s) => ({
-    ...s,
-    percentage: Math.round((s.earned / s.total) * 100),
-    gpa: ((s.earned / s.total) * 10).toFixed(1),
-  }))
-
-  const overallGpa = gpas.length > 0
-    ? (gpas.reduce((sum, s) => sum + parseFloat(s.gpa), 0) / gpas.length).toFixed(1)
-    : 'N/A'
-
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -82,7 +64,7 @@ export default function StudentDashboard() {
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome, {user?.name}!</h1>
       <p className="text-gray-500 mb-6">Here's your academic overview</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center justify-between">
             <div>
@@ -108,15 +90,6 @@ export default function StudentDashboard() {
               <p className="text-2xl font-bold text-gray-900 mt-1">{notices.length}</p>
             </div>
             <div className="w-12 h-12 rounded-lg bg-purple-50 flex items-center justify-center"><Bell className="w-6 h-6 text-purple-700" /></div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500 font-medium">Overall GPA</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{overallGpa}</p>
-            </div>
-            <div className="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center"><GraduationCap className="w-6 h-6 text-orange-700" /></div>
           </div>
         </div>
       </div>

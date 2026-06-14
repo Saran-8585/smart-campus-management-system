@@ -17,20 +17,4 @@ function attendanceSummary(req, res) {
   res.json(summary);
 }
 
-function marksSummary(req, res) {
-  const db = getDB();
-  const summary = db.prepare(`
-    SELECT s.id AS subject_id, s.name AS subject_name, s.code,
-           m.exam_type,
-           ROUND(AVG(m.score), 1) AS avg_score,
-           ROUND(MAX(m.score), 1) AS max_score,
-           ROUND(MIN(m.score), 1) AS min_score
-    FROM subjects s
-    JOIN marks m ON m.subject_id = s.id
-    GROUP BY s.id, m.exam_type
-    ORDER BY s.name, m.exam_type
-  `).all();
-  res.json(summary);
-}
-
-module.exports = { attendanceSummary, marksSummary };
+module.exports = { attendanceSummary };

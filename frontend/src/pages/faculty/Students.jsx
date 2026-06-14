@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Loader2, Users } from 'lucide-react'
 import api from '../../utils/axios'
+import toast from 'react-hot-toast'
 
 export default function FacultyStudents() {
   const [subjects, setSubjects] = useState([])
@@ -10,7 +11,7 @@ export default function FacultyStudents() {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    api.get('/subjects').then((res) => setSubjects(res.data)).catch(() => {})
+    api.get('/subjects').then((res) => setSubjects(res.data)).catch(() => toast.error('Failed to load subjects'))
   }, [])
 
   useEffect(() => {
@@ -18,7 +19,7 @@ export default function FacultyStudents() {
     setLoading(true)
     api.get(`/subjects/${selectedSubject}/students`)
       .then((res) => setStudents(res.data))
-      .catch(() => {})
+      .catch(() => toast.error('Failed to load students'))
       .finally(() => setLoading(false))
   }, [selectedSubject])
 

@@ -51,7 +51,7 @@ function login(req, res) {
 
   res.json({
     token,
-    user: { id: user.id, name: user.name, email: user.email, role: user.role, department: user.department },
+    user: { id: user.id, name: user.name, email: user.email, role: user.role, department: user.department, phone: user.phone, register_number: user.register_number, staff_id: user.staff_id, active: user.active },
   });
 }
 

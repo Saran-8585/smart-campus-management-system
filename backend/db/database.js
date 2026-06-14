@@ -38,7 +38,8 @@ function initTables() {
       department TEXT NOT NULL,
       semester INTEGER NOT NULL,
       credits INTEGER NOT NULL DEFAULT 3,
-      faculty_id INTEGER REFERENCES users(id)
+      faculty_id INTEGER REFERENCES users(id),
+      active INTEGER DEFAULT 1
     );
 
     CREATE TABLE IF NOT EXISTS timetable (
@@ -66,16 +67,6 @@ function initTables() {
       UNIQUE(student_id, subject_id, date)
     );
 
-    CREATE TABLE IF NOT EXISTS marks (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      student_id INTEGER NOT NULL REFERENCES users(id),
-      subject_id INTEGER NOT NULL REFERENCES subjects(id),
-      exam_type TEXT NOT NULL CHECK(exam_type IN ('Mid','Final','Assignment')),
-      score REAL NOT NULL,
-      max_score REAL NOT NULL DEFAULT 100,
-      UNIQUE(student_id, subject_id, exam_type)
-    );
-
     CREATE TABLE IF NOT EXISTS notices (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
@@ -83,6 +74,7 @@ function initTables() {
       category TEXT NOT NULL CHECK(category IN ('Exam','Event','Holiday','General')),
       posted_by INTEGER NOT NULL REFERENCES users(id),
       target_role TEXT DEFAULT 'all' CHECK(target_role IN ('all','student','faculty','admin')),
+      active INTEGER DEFAULT 1,
       created_at TEXT DEFAULT (datetime('now'))
     );
 

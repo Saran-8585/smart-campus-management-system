@@ -2,27 +2,34 @@ import { useState, useEffect } from 'react'
 import { Users, BookOpen, Bell, UserCheck } from 'lucide-react'
 import api from '../../utils/axios'
 import StatCard from '../../components/StatCard'
+import toast from 'react-hot-toast'
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({ students: 0, faculty: 0, subjects: 0, notices: 0 })
+  const [stats, setStats] = useState({ students: 0, faculty: 0, subjects: 0, notices: 0, departments: [], semesters: [], admins: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
       api.get('/users?role=student'),
       api.get('/users?role=faculty'),
+      api.get('/users?role=admin'),
       api.get('/subjects'),
       api.get('/notices'),
     ])
-      .then(([students, faculty, subjects, notices]) => {
+      .then(([students, faculty, admins, subjects, notices]) => {
+        const depts = [...new Set(subjects.data.map((s) => s.department).filter(Boolean))]
+        const sems = [...new Set(subjects.data.map((s) => s.semester).filter(Boolean))]
         setStats({
           students: students.data.length,
           faculty: faculty.data.length,
+          admins: admins.data.length,
           subjects: subjects.data.length,
           notices: notices.data.length,
+          departments: depts,
+          semesters: sems.sort((a, b) => a - b),
         })
       })
-      .catch(() => {})
+      .catch(() => toast.error('Failed to load dashboard data'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -53,24 +60,24 @@ export default function AdminDashboard() {
             <div className="space-y-2">
               <div className="flex justify-between py-2 border-b border-gray-100">
                 <span className="text-gray-600">Departments</span>
-                <span className="font-medium">CSE, ECE</span>
+                <span className="font-medium">{stats.departments.join(', ') || 'N/A'}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100">
                 <span className="text-gray-600">Semesters Active</span>
-                <span className="font-medium">3, 5, 7</span>
+                <span className="font-medium">{stats.semesters.join(', ') || 'N/A'}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100">
                 <span className="text-gray-600">Admin Accounts</span>
-                <span className="font-medium">2</span>
+                <span className="font-medium">{stats.admins}</span>
               </div>
             </div>
           </div>
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Recent Activity</h3>
+            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">System Overview</h3>
             <div className="space-y-2 text-sm text-gray-600">
-              <p className="py-1">System initialized with seed data</p>
-              <p className="py-1">All modules ready for use</p>
-              <p className="py-1">Attendance, Marks, Timetable loaded</p>
+              <p className="py-1">Total users: {stats.students + stats.faculty + stats.admins} ({stats.students} students, {stats.faculty} faculty, {stats.admins} admins)</p>
+              <p className="py-1">Subjects across {stats.departments.length} department(s), {stats.semesters.length} semester(s)</p>
+              <p className="py-1">{stats.notices} notice(s) published</p>
             </div>
           </div>
         </div>

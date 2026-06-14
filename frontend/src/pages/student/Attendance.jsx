@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Loader2, ClipboardCheck } from 'lucide-react'
 import api from '../../utils/axios'
 import { useAuth } from '../../context/AuthContext'
+import toast from 'react-hot-toast'
 
 export default function StudentAttendance() {
   const { user } = useAuth()
@@ -9,11 +10,12 @@ export default function StudentAttendance() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!user) return
     api.get(`/attendance/student/${user.id}`)
       .then((res) => setAttendance(res.data))
-      .catch(() => {})
+      .catch(() => toast.error('Failed to load attendance'))
       .finally(() => setLoading(false))
-  }, [user.id])
+  }, [user?.id])
 
   const bySubject = {}
   attendance.forEach((a) => {

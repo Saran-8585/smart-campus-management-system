@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Bell, Filter } from 'lucide-react'
 import api from '../../utils/axios'
+import toast from 'react-hot-toast'
 
 const categories = ['All', 'Exam', 'Event', 'Holiday', 'General']
 const categoryColors = {
@@ -19,7 +20,7 @@ export default function StudentNotices() {
   useEffect(() => {
     api.get('/notices')
       .then((res) => setNotices(res.data))
-      .catch(() => {})
+      .catch(() => toast.error('Failed to load notices'))
       .finally(() => setLoading(false))
   }, [])
 

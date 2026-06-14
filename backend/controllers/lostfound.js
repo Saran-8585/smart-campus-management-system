@@ -2,7 +2,7 @@ const { getDB } = require('../db/database');
 
 function list(req, res) {
   const db = getDB();
-  const { type, category, status, date_from, date_to, search } = req.query;
+  const { type, category, status, date_from, date_to, search, posted_by } = req.query;
   let query = `
     SELECT lf.*, u.name AS posted_by_name
     FROM lost_found_items lf
@@ -12,10 +12,16 @@ function list(req, res) {
   const params = [];
   if (type) { query += ' AND lf.type = ?'; params.push(type); }
   if (category) { query += ' AND lf.category = ?'; params.push(category); }
-  if (status) { query += ' AND lf.status = ?'; params.push(status); }
+  query += " AND lf.status = 'Active'";
+  if (status) {
+    query = query.replace("AND lf.status = 'Active'", '');
+    query += ' AND lf.status = ?';
+    params.push(status);
+  }
   if (date_from) { query += ' AND lf.date_occurred >= ?'; params.push(date_from); }
   if (date_to) { query += ' AND lf.date_occurred <= ?'; params.push(date_to); }
   if (search) { query += ' AND lf.item_name LIKE ?'; params.push(`%${search}%`); }
+  if (posted_by) { query += ' AND lf.posted_by = ?'; params.push(posted_by); }
   query += ' ORDER BY lf.created_at DESC';
   const items = db.prepare(query).all(...params);
   res.json(items);

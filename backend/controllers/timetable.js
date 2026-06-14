@@ -41,11 +41,25 @@ function getTimetable(req, res) {
   res.json(rows);
 }
 
+function checkConflict(db, day, start_time, end_time, room, excludeId) {
+  const conflict = db.prepare(`
+    SELECT id FROM timetable
+    WHERE day = ? AND room = ? AND is_active = 1
+    AND start_time < ? AND end_time > ?
+    ${excludeId ? 'AND id != ?' : ''}
+    LIMIT 1
+  `).get(day, room, end_time, start_time, ...(excludeId ? [excludeId] : []));
+  return !!conflict;
+}
+
 function create(req, res) {
   const db = getDB();
   const { subject_id, day, start_time, end_time, room, semester, faculty_name, department, section } = req.body;
   if (!subject_id || !day || !start_time || !end_time || !room || !semester) {
     return res.status(400).json({ error: 'All fields are required' });
+  }
+  if (checkConflict(db, day, start_time, end_time, room)) {
+    return res.status(409).json({ error: `Room ${room} already has a class scheduled during this time on ${day}` });
   }
   const info = db.prepare(
     'INSERT INTO timetable (subject_id, day, start_time, end_time, room, semester, faculty_name, department, section, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
@@ -66,6 +80,10 @@ function update(req, res) {
   const { subject_id, day, start_time, end_time, room, semester, faculty_name, department, section } = req.body;
   if (!subject_id || !day || !start_time || !end_time || !room || !semester) {
     return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  if (checkConflict(db, day, start_time, end_time, room, id)) {
+    return res.status(409).json({ error: `Room ${room} already has a class scheduled during this time on ${day}` });
   }
 
   db.prepare("UPDATE timetable SET is_active = 0, deactivated_at = datetime('now') WHERE id = ?").run(id);

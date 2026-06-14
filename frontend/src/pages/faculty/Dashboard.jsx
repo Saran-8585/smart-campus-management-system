@@ -4,8 +4,9 @@ import { Link } from 'react-router-dom'
 import api from '../../utils/axios'
 import StatCard from '../../components/StatCard'
 import { useAuth } from '../../context/AuthContext'
+import toast from 'react-hot-toast'
 
-const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+const dayMap = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday' }
 
 export default function FacultyDashboard() {
   const { user } = useAuth()
@@ -22,11 +23,11 @@ export default function FacultyDashboard() {
         setSubjects(subs.data)
         setTimetable(tt.data)
       })
-      .catch(() => {})
+      .catch(() => toast.error('Failed to load dashboard data'))
       .finally(() => setLoading(false))
   }, [])
 
-  const today = days[new Date().getDay() === 0 ? 5 : new Date().getDay() - 1] || 'Monday'
+  const today = dayMap[new Date().getDay()] || 'Monday'
   const todayClasses = timetable.filter((t) => t.day === today)
 
   if (loading) {
@@ -83,11 +84,9 @@ export default function FacultyDashboard() {
                       <p className="font-medium text-gray-900">{s.name}</p>
                       <p className="text-sm text-gray-500">{s.code} | Sem {s.semester} | {s.credits} Credits</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div>
                       <Link to="/faculty/attendance"
                         className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded hover:bg-blue-100">Attendance</Link>
-                      <Link to="/faculty/marks"
-                        className="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded hover:bg-purple-100">Marks</Link>
                     </div>
                   </div>
                 </div>

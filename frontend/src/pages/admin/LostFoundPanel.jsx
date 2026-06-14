@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Search, Loader2, Image, X, Filter, Trash2, Eye } from 'lucide-react'
+import { Search, Loader2, Image, X, Filter, Trash2, Eye, FileText } from 'lucide-react'
 import api from '../../utils/axios'
 import toast from 'react-hot-toast'
+import ConfirmDialog from '../../components/ConfirmDialog'
 
 const categories = ['Electronics', 'Bag', 'ID Card', 'Keys', 'Clothing', 'Books', 'Jewellery', 'Other']
 const statusColors = { Active: 'bg-blue-100 text-blue-700', Claimed: 'bg-green-100 text-green-700', Expired: 'bg-gray-100 text-gray-500' }
@@ -18,6 +19,7 @@ export default function AdminLostFoundPanel() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [proofModal, setProofModal] = useState(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
 
   const fetchItems = () => {
     setLoading(true)
@@ -54,11 +56,12 @@ export default function AdminLostFoundPanel() {
     else fetchClaims()
   }
 
-  const handleRemove = async (id) => {
-    if (!confirm('Mark this item as expired?')) return
+  const handleRemove = async () => {
+    if (!confirmDeleteId) return
     try {
-      await api.delete(`/lost-found/admin/${id}`)
+      await api.delete(`/lost-found/admin/${confirmDeleteId}`)
       toast.success('Item deactivated')
+      setConfirmDeleteId(null)
       fetchItems()
     } catch { toast.error('Failed to deactivate') }
   }
@@ -124,6 +127,12 @@ export default function AdminLostFoundPanel() {
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-700" /></div>
         ) : tab === 'items' ? (
+          items.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <FileText className="w-12 h-12 mx-auto mb-3" />
+              <p className="text-sm">No items found</p>
+            </div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -148,11 +157,11 @@ export default function AdminLostFoundPanel() {
                     <td className="px-4 py-3 text-sm text-gray-500">{new Date(item.created_at).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-right">
                       {item.image_path && (
-                        <button onClick={() => setProofModal(`http://localhost:5000${item.image_path}`)}
+                        <button onClick={() => setProofModal(item.image_path)}
                           className="text-sm text-primary-600 hover:text-primary-800 mr-3"><Eye className="w-4 h-4 inline" /> View</button>
                       )}
                       {item.status !== 'Expired' && (
-                        <button onClick={() => handleRemove(item.id)} className="text-sm text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4 inline" /> Deactivate</button>
+                        <button onClick={() => setConfirmDeleteId(item.id)} className="text-sm text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4 inline" /> Deactivate</button>
                       )}
                     </td>
                   </tr>
@@ -160,7 +169,14 @@ export default function AdminLostFoundPanel() {
               </tbody>
             </table>
           </div>
+          )
         ) : (
+          claims.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <FileText className="w-12 h-12 mx-auto mb-3" />
+              <p className="text-sm">No claims found</p>
+            </div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -183,7 +199,7 @@ export default function AdminLostFoundPanel() {
                     <td className="px-4 py-3 text-sm text-gray-500 max-w-xs truncate">{claim.claim_description}</td>
                     <td className="px-4 py-3">
                       {claim.proof_image_path ? (
-                        <button onClick={() => setProofModal(`http://localhost:5000${claim.proof_image_path}`)}
+                        <button onClick={() => setProofModal(claim.proof_image_path)}
                           className="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
                           <Image className="w-3 h-3" /> View Proof
                         </button>
@@ -199,8 +215,17 @@ export default function AdminLostFoundPanel() {
               </tbody>
             </table>
           </div>
+          )
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!confirmDeleteId}
+        title="Deactivate Item"
+        message="Mark this item as expired? This action cannot be undone."
+        onConfirm={handleRemove}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
 
       {/* Proof Image Modal */}
       {proofModal && (

@@ -10,6 +10,7 @@ function getAll(req, res) {
       SELECT n.*, u.name AS poster_name
       FROM notices n
       JOIN users u ON u.id = n.posted_by
+      WHERE n.active = 1
       ORDER BY n.created_at DESC
     `).all();
   } else if (user.role === 'faculty') {
@@ -17,7 +18,7 @@ function getAll(req, res) {
       SELECT n.*, u.name AS poster_name
       FROM notices n
       JOIN users u ON u.id = n.posted_by
-      WHERE n.target_role IN ('all', 'faculty')
+      WHERE n.active = 1 AND n.target_role IN ('all', 'faculty')
       ORDER BY n.created_at DESC
     `).all();
   } else {
@@ -25,7 +26,7 @@ function getAll(req, res) {
       SELECT n.*, u.name AS poster_name
       FROM notices n
       JOIN users u ON u.id = n.posted_by
-      WHERE n.target_role IN ('all', 'student')
+      WHERE n.active = 1 AND n.target_role IN ('all', 'student')
       ORDER BY n.created_at DESC
     `).all();
   }
@@ -57,7 +58,7 @@ function remove(req, res) {
   const { id } = req.params;
   const existing = db.prepare('SELECT id FROM notices WHERE id = ?').get(id);
   if (!existing) return res.status(404).json({ error: 'Notice not found' });
-  db.prepare('DELETE FROM notices WHERE id = ?').run(id);
+  db.prepare("UPDATE notices SET active = 0 WHERE id = ?").run(id);
   res.json({ message: 'Notice deleted' });
 }
 

@@ -94,10 +94,8 @@ export default function LostFound() {
 
   const loadMyPosts = async () => {
     try {
-      const res = await api.get('/lost-found', { params: { type: 'Lost' } })
-      const foundRes = await api.get('/lost-found', { params: { type: 'Found' } })
-      const all = [...res.data, ...foundRes.data].filter(i => i.posted_by === user.id)
-      setMyPosts(all)
+      const res = await api.get('/lost-found', { params: { posted_by: user.id } })
+      setMyPosts(res.data)
       setShowMyPosts(true)
     } catch { toast.error('Failed to load your posts') }
   }
@@ -186,7 +184,7 @@ export default function LostFound() {
             <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
               <div className="h-36 bg-gray-100 flex items-center justify-center">
                 {item.image_path ? (
-                  <img src={`http://localhost:5000${item.image_path}`} alt={item.item_name} className="w-full h-full object-cover" />
+                  <img src={item.image_path} alt={item.item_name} className="w-full h-full object-cover" />
                 ) : (
                   <Image className="w-10 h-10 text-gray-300" />
                 )}
@@ -377,7 +375,7 @@ export default function LostFound() {
                     <p className="text-sm text-gray-700 mb-2">{claim.claim_description}</p>
                     {claim.proof_image_path && (
                       <div className="mb-2">
-                        <img src={`http://localhost:5000${claim.proof_image_path}`} alt="Proof" className="h-24 w-auto rounded border" />
+                        <img src={claim.proof_image_path} alt="Proof" className="h-24 w-auto rounded border" />
                       </div>
                     )}
                     {claim.status === 'Pending' && (

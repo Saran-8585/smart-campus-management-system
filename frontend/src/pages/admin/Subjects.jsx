@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Search, Plus, X, Loader2, BookOpen } from 'lucide-react'
+import { Search, Plus, X, Loader2, BookOpen, Edit, Trash2 } from 'lucide-react'
 import api from '../../utils/axios'
 import toast from 'react-hot-toast'
+import ConfirmDialog from '../../components/ConfirmDialog'
 
 export default function AdminSubjects() {
   const [subjects, setSubjects] = useState([])
@@ -9,8 +10,10 @@ export default function AdminSubjects() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
+  const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({ name: '', code: '', department: 'CSE', semester: 3, credits: 3, faculty_id: '' })
   const [saving, setSaving] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
 
   const fetchData = () => {
     setLoading(true)
@@ -33,6 +36,19 @@ export default function AdminSubjects() {
     s.code.toLowerCase().includes(search.toLowerCase())
   )
 
+  const openEdit = (subject) => {
+    setEditing(subject)
+    setForm({
+      name: subject.name,
+      code: subject.code,
+      department: subject.department,
+      semester: subject.semester,
+      credits: subject.credits,
+      faculty_id: subject.faculty_id ? String(subject.faculty_id) : '',
+    })
+    setShowForm(true)
+  }
+
   const handleSave = async () => {
     if (!form.name || !form.code || !form.department || !form.semester) {
       toast.error('Name, code, department, and semester are required')
@@ -40,15 +56,32 @@ export default function AdminSubjects() {
     }
     setSaving(true)
     try {
-      await api.post('/subjects', { ...form, faculty_id: form.faculty_id || null })
-      toast.success('Subject created')
+      if (editing) {
+        await api.put(`/subjects/${editing.id}`, { ...form, faculty_id: form.faculty_id || null })
+        toast.success('Subject updated')
+      } else {
+        await api.post('/subjects', { ...form, faculty_id: form.faculty_id || null })
+        toast.success('Subject created')
+      }
       setShowForm(false)
+      setEditing(null)
       setForm({ name: '', code: '', department: 'CSE', semester: 3, credits: 3, faculty_id: '' })
       fetchData()
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to create')
+      toast.error(err.response?.data?.error || 'Failed to save')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/subjects/${deleteId}`)
+      toast.success('Subject deactivated')
+      setDeleteId(null)
+      fetchData()
+    } catch {
+      toast.error('Failed to deactivate')
     }
   }
 
@@ -90,6 +123,7 @@ export default function AdminSubjects() {
                   <th className="px-4 py-3">Semester</th>
                   <th className="px-4 py-3">Credits</th>
                   <th className="px-4 py-3">Faculty</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -101,6 +135,10 @@ export default function AdminSubjects() {
                     <td className="px-4 py-3 text-sm text-gray-500">{s.semester}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{s.credits}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{s.faculty_name || 'Unassigned'}</td>
+                    <td className="px-4 py-3 text-right">
+                      <button onClick={() => openEdit(s)} className="text-sm text-primary-600 hover:text-primary-800 mr-3"><Edit className="w-3.5 h-3.5 inline" /> Edit</button>
+                      <button onClick={() => setDeleteId(s.id)} className="text-sm text-red-600 hover:text-red-800"><Trash2 className="w-3.5 h-3.5 inline" /> Delete</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -113,7 +151,7 @@ export default function AdminSubjects() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Add Subject</h2>
+              <h2 className="text-lg font-semibold">{editing ? 'Edit Subject' : 'Add Subject'}</h2>
               <button onClick={() => setShowForm(false)} className="p-1 hover:bg-gray-100 rounded"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-3">
@@ -144,7 +182,7 @@ export default function AdminSubjects() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Credits</label>
-                <input type="number" value={form.credits} onChange={(e) => setForm({ ...form, credits: Number(e.target.value) })}
+                <input type="number" min="1" value={form.credits} onChange={(e) => setForm({ ...form, credits: Number(e.target.value) })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
               </div>
               <div>
@@ -157,16 +195,24 @@ export default function AdminSubjects() {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowForm(false)}
+              <button onClick={() => { setShowForm(false); setEditing(null) }}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
               <button onClick={handleSave} disabled={saving}
                 className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-60 flex items-center gap-2">
-                {saving && <Loader2 className="w-4 h-4 animate-spin" />}{saving ? 'Saving...' : 'Save'}
+                {saving && <Loader2 className="w-4 h-4 animate-spin" />}{saving ? 'Saving...' : editing ? 'Update' : 'Save'}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteId}
+        title="Deactivate Subject"
+        message="This will deactivate the subject. Timetable and enrollment records will be preserved but the subject will no longer appear in active listings."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   )
 }

@@ -61,4 +61,37 @@ function getStudents(req, res) {
   res.json(students);
 }
 
-module.exports = { getAll, create, getStudents };
+function update(req, res) {
+  const db = getDB();
+  const { id } = req.params;
+  const existing = db.prepare('SELECT id FROM subjects WHERE id = ?').get(id);
+  if (!existing) return res.status(404).json({ error: 'Subject not found' });
+
+  const { name, code, department, semester, credits, faculty_id } = req.body;
+  if (!name || !code || !department || !semester) {
+    return res.status(400).json({ error: 'Name, code, department, and semester are required' });
+  }
+
+  const dup = db.prepare('SELECT id FROM subjects WHERE code = ? AND id != ?').get(code, id);
+  if (dup) return res.status(400).json({ error: 'Subject code already exists' });
+
+  db.prepare(
+    'UPDATE subjects SET name = ?, code = ?, department = ?, semester = ?, credits = ?, faculty_id = ? WHERE id = ?'
+  ).run(name, code, department, semester, credits || 3, faculty_id || null, id);
+  const subject = db.prepare(`
+    SELECT s.*, u.name AS faculty_name
+    FROM subjects s LEFT JOIN users u ON s.faculty_id = u.id
+    WHERE s.id = ?
+  `).get(id);
+  res.json(subject);
+}
+
+function remove(req, res) {
+  const db = getDB();
+  const existing = db.prepare('SELECT id FROM subjects WHERE id = ? AND active = 1').get(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Subject not found' });
+  db.prepare('UPDATE subjects SET active = 0 WHERE id = ?').run(req.params.id);
+  res.json({ message: 'Subject deactivated' });
+}
+
+module.exports = { getAll, create, getStudents, update, remove };

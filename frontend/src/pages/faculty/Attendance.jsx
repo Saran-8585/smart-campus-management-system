@@ -24,7 +24,7 @@ export default function FacultyAttendance() {
   const [viewHistory, setViewHistory] = useState(false)
 
   useEffect(() => {
-    api.get('/subjects').then((res) => setSubjects(res.data)).catch(() => {})
+    api.get('/subjects').then((res) => setSubjects(res.data)).catch(() => toast.error('Failed to load subjects'))
   }, [])
 
   useEffect(() => {
@@ -89,14 +89,12 @@ export default function FacultyAttendance() {
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
           </div>
-          {viewHistory && (
-            <div className="relative flex-1">
+          <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input type="text" placeholder="Search students..." value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
             </div>
-          )}
           <button onClick={() => { setViewHistory(!viewHistory); setSearch('') }}
             className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
               viewHistory ? 'bg-primary-50 border-primary-300 text-primary-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50'

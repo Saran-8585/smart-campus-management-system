@@ -22,7 +22,6 @@ const roleMenus = {
   faculty: [
     { label: 'Dashboard', path: '/faculty', icon: LayoutDashboard },
     { label: 'Attendance', path: '/faculty/attendance', icon: ClipboardCheck },
-    { label: 'Marks', path: '/faculty/marks', icon: GraduationCap },
     { label: 'Notices', path: '/faculty/notices', icon: Bell },
     { label: 'Students', path: '/faculty/students', icon: Users },
     { label: 'Classroom Status', path: '/faculty/classroom-status', icon: Clock },
@@ -33,7 +32,6 @@ const roleMenus = {
     { label: 'Dashboard', path: '/student', icon: LayoutDashboard },
     { label: 'Timetable', path: '/student/timetable', icon: Calendar },
     { label: 'Attendance', path: '/student/attendance', icon: ClipboardCheck },
-    { label: 'Marks', path: '/student/marks', icon: GraduationCap },
     { label: 'Notices', path: '/student/notices', icon: Bell },
     { label: 'Profile', path: '/student/profile', icon: UserCircle },
     { label: 'Classroom Status', path: '/student/classroom-status', icon: Clock },

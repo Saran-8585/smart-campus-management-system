@@ -38,6 +38,8 @@ export default function Login() {
       newErrors.identifier = `${getLabel()} is required`
     } else if (selectedRole === 'student' && !/^[a-zA-Z0-9]{8,12}$/.test(identifier)) {
       newErrors.identifier = 'Register Number must be alphanumeric, 8-12 characters'
+    } else if (selectedRole === 'admin' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) {
+      newErrors.identifier = 'Enter a valid email address'
     }
     if (!password) {
       newErrors.password = 'Password is required'

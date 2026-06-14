@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Loader2, Clock, Filter } from 'lucide-react'
 import api from '../../utils/axios'
+import toast from 'react-hot-toast'
 
 export default function AdminNavigationHistory() {
   const [history, setHistory] = useState([])
@@ -17,7 +18,7 @@ export default function AdminNavigationHistory() {
     if (dateTo) params.date_to = dateTo
     api.get('/navigation/history/all', { params })
       .then(res => setHistory(res.data))
-      .catch(() => setHistory([]))
+      .catch(() => { setHistory([]); toast.error('Failed to load history') })
       .finally(() => setLoading(false))
   }
 

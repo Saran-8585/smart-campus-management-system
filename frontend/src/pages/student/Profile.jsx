@@ -55,8 +55,10 @@ export default function StudentProfile() {
               <BadgeCheck className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wider">Role</p>
-              <p className="text-sm font-medium text-gray-900 capitalize">{user.role}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider">{user.role === 'student' ? 'Register Number' : 'Staff ID'}</p>
+              <p className="text-sm font-medium text-gray-900">
+                {user.role === 'student' ? user.register_number : user.staff_id || 'Not assigned'}
+              </p>
             </div>
           </div>
         </div>

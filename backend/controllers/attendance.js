@@ -69,6 +69,21 @@ function getByStudent(req, res) {
   const db = getDB();
   const { studentId } = req.params;
 
+  if (req.user.role === 'student' && req.user.id !== Number(studentId)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  if (req.user.role === 'faculty') {
+    const teaches = db.prepare(`
+      SELECT 1 FROM enrollments e
+      JOIN subjects s ON s.id = e.subject_id
+      WHERE e.student_id = ? AND s.faculty_id = ?
+    `).get(studentId, req.user.id);
+    if (!teaches) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+  }
+
   const records = db.prepare(`
     SELECT a.*, s.name AS subject_name, s.code AS subject_code
     FROM attendance a

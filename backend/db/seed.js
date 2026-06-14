@@ -11,7 +11,6 @@ function seed() {
     DELETE FROM navigation_history;
     DELETE FROM navigation_places;
     DELETE FROM attendance;
-    DELETE FROM marks;
     DELETE FROM timetable;
     DELETE FROM enrollments;
     DELETE FROM notices;
@@ -357,20 +356,6 @@ function seed() {
         const status = statuses[Math.floor(Math.random() * statuses.length)];
         insertAttendance.run(sid, subId, dateStr, status);
       }
-    }
-  }
-
-  console.log('Seeding marks...');
-  const insertMark = db.prepare(
-    'INSERT OR IGNORE INTO marks (student_id, subject_id, exam_type, score, max_score) VALUES (?, ?, ?, ?, ?)'
-  );
-
-  for (const sid of studentIds) {
-    const deptSubjects = sid <= cseStudentIds[cseStudentIds.length - 1] ? cseSubjectIds : eceSubjectIds;
-    for (const subId of deptSubjects) {
-      insertMark.run(sid, subId, 'Mid', Math.floor(Math.random() * 30) + 20, 50);
-      insertMark.run(sid, subId, 'Final', Math.floor(Math.random() * 50) + 30, 100);
-      insertMark.run(sid, subId, 'Assignment', Math.floor(Math.random() * 15) + 10, 25);
     }
   }
 

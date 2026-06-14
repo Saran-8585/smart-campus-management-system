@@ -16,9 +16,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-router.get('/', list);
+router.get('/', authenticate, list);
 router.post('/', authenticate, upload.single('image'), create);
-router.get('/:id', getOne);
+router.get('/:id', authenticate, getOne);
 router.post('/:id/claim', authenticate, upload.single('proof_image'), createClaim);
 router.get('/:id/claims', authenticate, getClaims);
 router.patch('/claims/:claimId/approve', authenticate, approveClaim);

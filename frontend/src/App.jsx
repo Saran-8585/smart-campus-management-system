@@ -20,7 +20,6 @@ import AdminLostFoundPanel from './pages/admin/LostFoundPanel'
 // Faculty pages
 import FacultyDashboard from './pages/faculty/Dashboard'
 import FacultyAttendance from './pages/faculty/Attendance'
-import FacultyMarks from './pages/faculty/Marks'
 import FacultyNotices from './pages/faculty/Notices'
 import FacultyStudents from './pages/faculty/Students'
 
@@ -28,7 +27,6 @@ import FacultyStudents from './pages/faculty/Students'
 import StudentDashboard from './pages/student/Dashboard'
 import StudentTimetable from './pages/student/Timetable'
 import StudentAttendance from './pages/student/Attendance'
-import StudentMarks from './pages/student/Marks'
 import StudentNotices from './pages/student/Notices'
 import StudentProfile from './pages/student/Profile'
 
@@ -63,7 +61,6 @@ export default function App() {
       <Route path="/faculty" element={<ProtectedRoute roles={['faculty']}><Layout role="faculty" /></ProtectedRoute>}>
         <Route index element={<FacultyDashboard />} />
         <Route path="attendance" element={<FacultyAttendance />} />
-        <Route path="marks" element={<FacultyMarks />} />
         <Route path="notices" element={<FacultyNotices />} />
         <Route path="students" element={<FacultyStudents />} />
         <Route path="classroom-status" element={<ClassroomStatus />} />
@@ -76,7 +73,6 @@ export default function App() {
         <Route index element={<StudentDashboard />} />
         <Route path="timetable" element={<StudentTimetable />} />
         <Route path="attendance" element={<StudentAttendance />} />
-        <Route path="marks" element={<StudentMarks />} />
         <Route path="notices" element={<StudentNotices />} />
         <Route path="profile" element={<StudentProfile />} />
         <Route path="classroom-status" element={<ClassroomStatus />} />
