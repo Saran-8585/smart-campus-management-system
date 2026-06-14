@@ -57,6 +57,14 @@ export default function FacultyAttendance() {
     try {
       await api.post('/attendance', { subject_id: Number(selectedSubject), date, records: recordsPayload })
       toast.success('Attendance saved')
+      const res = await api.get(`/attendance/${selectedSubject}?date=${date}`)
+      setStudents(res.data.students)
+      setExistingRecords(res.data.records)
+      const map = {}
+      for (const r of res.data.records) {
+        map[r.student_id] = r.status
+      }
+      setRecords(map)
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to save')
     } finally {

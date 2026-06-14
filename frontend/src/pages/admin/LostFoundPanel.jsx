@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, Loader2, Image, X, Filter, Trash2, Eye, FileText } from 'lucide-react'
+import { Search, Loader2, Image, X, Filter, Trash2, Eye, FileText, Plus } from 'lucide-react'
 import api from '../../utils/axios'
 import toast from 'react-hot-toast'
 import ConfirmDialog from '../../components/ConfirmDialog'
@@ -20,6 +20,11 @@ export default function AdminLostFoundPanel() {
   const [dateTo, setDateTo] = useState('')
   const [proofModal, setProofModal] = useState(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [showPostForm, setShowPostForm] = useState(false)
+  const [postType, setPostType] = useState('Lost')
+  const [postForm, setPostForm] = useState({ item_name: '', description: '', category: 'Other', date_occurred: '', location: '', contact_info: '', where_item_now: '' })
+  const [postImage, setPostImage] = useState(null)
+  const [saving, setSaving] = useState(false)
 
   const fetchItems = () => {
     setLoading(true)
@@ -56,6 +61,24 @@ export default function AdminLostFoundPanel() {
     else fetchClaims()
   }
 
+  const handlePost = async () => {
+    if (!postForm.item_name) { toast.error('Item name is required'); return }
+    setSaving(true)
+    try {
+      const fd = new FormData()
+      Object.entries(postForm).forEach(([k, v]) => fd.append(k, v))
+      fd.append('type', postType)
+      if (postImage) fd.append('image', postImage)
+      await api.post('/lost-found', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      toast.success(`${postType} item posted`)
+      setShowPostForm(false)
+      setPostForm({ item_name: '', description: '', category: 'Other', date_occurred: '', location: '', contact_info: '', where_item_now: '' })
+      setPostImage(null)
+      fetchItems()
+    } catch (err) { toast.error(err.response?.data?.error || 'Failed to post') }
+    finally { setSaving(false) }
+  }
+
   const handleRemove = async () => {
     if (!confirmDeleteId) return
     try {
@@ -68,7 +91,20 @@ export default function AdminLostFoundPanel() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Lost & Found Admin Panel</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Lost & Found Admin Panel</h1>
+        <div className="flex gap-2">
+          <button onClick={() => { setPostType('Lost'); setPostForm({ item_name: '', description: '', category: 'Other', date_occurred: new Date().toISOString().split('T')[0], location: '', contact_info: '', where_item_now: '' }); setPostImage(null); setShowPostForm(true) }}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800">
+            <Plus className="w-4 h-4" /> Report Lost
+          </button>
+          <button onClick={() => { setPostType('Found'); setPostForm({ item_name: '', description: '', category: 'Other', date_occurred: new Date().toISOString().split('T')[0], location: '', contact_info: '', where_item_now: '' }); setPostImage(null); setShowPostForm(true) }}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
+            <Plus className="w-4 h-4" /> Report Found
+          </button>
+        </div>
+      </div>
+      
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
         <div className="flex border-b border-gray-100">
@@ -233,6 +269,73 @@ export default function AdminLostFoundPanel() {
           <div className="relative" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setProofModal(null)} className="absolute -top-2 -right-2 p-1 bg-white rounded-full shadow"><X className="w-4 h-4" /></button>
             <img src={proofModal} alt="Proof" className="max-h-[80vh] max-w-[90vw] rounded-lg shadow-2xl" />
+          </div>
+        </div>
+      )}
+
+      {/* Post Form Modal */}
+      {showPostForm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Report {postType} Item</h2>
+              <button onClick={() => setShowPostForm(false)} className="p-1 hover:bg-gray-100 rounded"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Item Name *</label>
+                <input value={postForm.item_name} onChange={(e) => setPostForm({ ...postForm, item_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea value={postForm.description} onChange={(e) => setPostForm({ ...postForm, description: e.target.value })} rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select value={postForm.category} onChange={(e) => setPostForm({ ...postForm, category: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date {postType === 'Lost' ? 'Lost' : 'Found'}</label>
+                  <input type="date" value={postForm.date_occurred} onChange={(e) => setPostForm({ ...postForm, date_occurred: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input value={postForm.location} onChange={(e) => setPostForm({ ...postForm, location: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
+                <input type="file" accept="image/*" onChange={(e) => setPostImage(e.target.files[0])}
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Info (optional)</label>
+                <input value={postForm.contact_info} onChange={(e) => setPostForm({ ...postForm, contact_info: e.target.value })} placeholder="Phone or email"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
+              </div>
+              {postType === 'Found' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Where is the item now?</label>
+                  <input value={postForm.where_item_now} onChange={(e) => setPostForm({ ...postForm, where_item_now: e.target.value })} placeholder="e.g. Submitted to Admin Office, I have it with me"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setShowPostForm(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
+              <button onClick={handlePost} disabled={saving}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-60 flex items-center gap-2">
+                {saving && <Loader2 className="w-4 h-4 animate-spin" />}{saving ? 'Posting...' : 'Post'}
+              </button>
+            </div>
           </div>
         </div>
       )}

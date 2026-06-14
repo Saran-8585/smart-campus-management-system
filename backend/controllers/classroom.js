@@ -1,5 +1,14 @@
 const { getDB } = require('../db/database');
 
+const TIMEZONE = process.env.TIMEZONE || 'Asia/Kolkata';
+
+function getCurrentTimeInTimezone() {
+  const now = new Date();
+  const dayName = new Intl.DateTimeFormat('en-US', { timeZone: TIMEZONE, weekday: 'long' }).format(now);
+  const timeStr = new Intl.DateTimeFormat('en-US', { timeZone: TIMEZONE, hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
+  return { dayName, timeStr };
+}
+
 function status(req, res) {
   const { room } = req.query;
   if (!room) {
@@ -7,10 +16,7 @@ function status(req, res) {
   }
 
   const db = getDB();
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const now = new Date();
-  const currentDay = days[now.getDay()];
-  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const { dayName: currentDay, timeStr: currentTime } = getCurrentTimeInTimezone();
 
   if (currentDay === 'Sunday' || currentDay === 'Saturday') {
     return res.json({ current: null, upcoming_today: [] });

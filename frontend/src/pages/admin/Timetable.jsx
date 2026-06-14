@@ -18,6 +18,7 @@ export default function AdminTimetable() {
   const [saving, setSaving] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const [showInactive, setShowInactive] = useState(false)
+  const [semesterFilter, setSemesterFilter] = useState('')
   const [historyModal, setHistoryModal] = useState(false)
   const [historyRoom, setHistoryRoom] = useState('')
   const [historyData, setHistoryData] = useState([])
@@ -39,11 +40,13 @@ export default function AdminTimetable() {
 
   useEffect(() => { fetchData() }, [showInactive])
 
-  const filtered = entries.filter((e) =>
-    (e.subject_name?.toLowerCase().includes(search.toLowerCase()) ||
-    e.room?.toLowerCase().includes(search.toLowerCase()) ||
-    (e.faculty_name || '').toLowerCase().includes(search.toLowerCase()))
-  )
+  const filtered = entries.filter((e) => {
+    const matchSearch = e.subject_name?.toLowerCase().includes(search.toLowerCase()) ||
+      e.room?.toLowerCase().includes(search.toLowerCase()) ||
+      (e.faculty_name || '').toLowerCase().includes(search.toLowerCase())
+    const matchSemester = !semesterFilter || e.semester === Number(semesterFilter)
+    return matchSearch && matchSemester
+  })
 
   const groupedByDay = days.map((day) => ({
     day,
@@ -159,11 +162,18 @@ export default function AdminTimetable() {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="p-4 border-b border-gray-100">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" placeholder="Search by subject, room, or faculty..." value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input type="text" placeholder="Search by subject, room, or faculty..." value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
+            </div>
+            <select value={semesterFilter} onChange={(e) => setSemesterFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+              <option value="">All Semesters</option>
+              {semesters.map((s) => <option key={s} value={s}>Sem {s}</option>)}
+            </select>
           </div>
         </div>
 
