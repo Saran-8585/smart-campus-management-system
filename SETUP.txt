@@ -1,0 +1,377 @@
+================================================================================
+  SMART CAMPUS DIGITAL SYSTEM - WINDOWS SETUP GUIDE (Plain Text)
+================================================================================
+
+A step-by-step guide to set up and run the Smart Campus Digital System
+(MERN stack: MongoDB, Express, React, Node.js) on a Windows laptop.
+
+
+================================================================================
+  TABLE OF CONTENTS
+================================================================================
+
+1.  Prerequisites
+2.  Installation Steps
+    2.1 Install Node.js
+    2.2 Install MongoDB (Local / Atlas / Docker)
+    2.3 Install Git (optional)
+3.  Project Setup
+    3.1 Get the Code
+    3.2 Backend Setup
+    3.3 Seed the Database
+    3.4 Start the Backend Server
+    3.5 Frontend Setup
+    3.6 Open the Application
+4.  Login Credentials
+5.  Running the App (Quick Reference)
+6.  Windows-Specific Notes
+7.  Troubleshooting
+8.  MongoDB Atlas Alternative (No Local Install)
+9.  Using Docker for MongoDB
+10. Stopping the Application
+
+
+================================================================================
+  1. PREREQUISITES
+================================================================================
+
+  Software       Version     Purpose
+  --------       -------     -------
+  Node.js        18+         JavaScript runtime (includes npm)
+  npm            (comes w/   Package manager
+                 Node.js)
+  MongoDB        7.x+        Database
+
+
+================================================================================
+  2. INSTALLATION STEPS
+================================================================================
+
+  2.1 Install Node.js
+  --------------------------------------------------
+  1. Go to https://nodejs.org/
+  2. Download the LTS (Long Term Support) version.
+  3. Run the installer (.msi file). Keep all defaults.
+  4. Verify installation:
+     - Open Command Prompt (Win + R, type "cmd", press Enter).
+     - Run:
+         node --version
+         npm --version
+     - You should see version numbers (e.g., v20.11.0 and 10.2.4).
+
+
+  2.2 Install MongoDB
+  --------------------------------------------------
+
+  Choose ONE of the following options:
+
+  OPTION A - Local Install (Recommended for offline use)
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  1. Go to https://www.mongodb.com/try/download/community
+  2. Select Version 7.0+, Platform Windows.
+  3. Download the .msi installer.
+  4. Run the installer:
+     - Choose "Complete" setup type.
+     - Check "Install MongoDB as a Service" (default).
+     - Leave MongoDB Compass unchecked (optional).
+  5. After installation, MongoDB runs automatically.
+  6. Verify:
+         net start MongoDB
+     Expected: "The MongoDB service was started successfully."
+
+  OPTION B - MongoDB Atlas (Cloud, No Local Install)
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  See Section 8 below.
+
+
+  2.3 Install Git (optional)
+  --------------------------------------------------
+  Only needed if cloning the repository.
+  1. Go to https://git-scm.com/download/win
+  2. Download and run the installer (defaults are fine).
+  3. Verify:
+         git --version
+
+
+================================================================================
+  3. PROJECT SETUP
+================================================================================
+
+  3.1 Get the Code
+  --------------------------------------------------
+  Method A - Clone via Git:
+         git clone <repository-url> smart-campus
+         cd smart-campus
+
+  Method B - Copy from USB / network drive:
+     Copy the entire project folder to your Windows laptop.
+     Place it close to root (e.g., C:\smart-campus) to avoid
+     long path issues.
+
+
+  3.2 Backend Setup
+  --------------------------------------------------
+         cd backend
+         npm install
+
+  This installs all backend dependencies (Express, Mongoose,
+  JWT, bcryptjs, Multer, etc.).
+
+  Configure Environment Variables:
+     Open backend\.env in a text editor.
+
+     It should look like:
+     --------------------------------------------------
+     PORT=5000
+     JWT_SECRET=smart_campus_jwt_secret_key_2024
+     MONGO_URI=mongodb://localhost:27017/smart_campus
+     --------------------------------------------------
+
+     - PORT: The port the backend runs on (default 5000).
+     - JWT_SECRET: Secret key for JWT tokens.
+     - MONGO_URI:
+       * Local MongoDB: keep as above.
+       * MongoDB Atlas: replace with Atlas connection string.
+       * Docker MongoDB: keep as above.
+
+     Save the file.
+
+
+  3.3 Seed the Database
+  --------------------------------------------------
+         npm run seed
+
+  Expected output:
+     MongoDB connected: <connection-string>
+     MongoDB seeded successfully
+
+  This creates 22 users, 6 subjects, 40+ timetable entries,
+  navigation places, lost & found items, attendance, notices,
+  and marks.
+
+
+  3.4 Start the Backend Server
+  --------------------------------------------------
+         npm start
+
+  Expected output:
+     Server running on port 5000
+     MongoDB connected: mongodb://localhost:27017/smart_campus
+
+  KEEP THIS TERMINAL WINDOW OPEN.
+  The backend is now running at http://localhost:5000.
+
+
+  3.5 Frontend Setup
+  --------------------------------------------------
+  Open a NEW Command Prompt window (do NOT close the backend).
+
+         cd frontend
+         npm install
+         npm run dev
+
+  Expected output:
+     VITE v8.x.x  ready in <time>
+       > Local:   http://localhost:5173/
+       > Network: http://192.168.x.x:5173/
+
+  The frontend is now running at http://localhost:5173.
+
+
+  3.6 Open the Application
+  --------------------------------------------------
+  1. Open your web browser (Chrome, Edge, Firefox).
+  2. Navigate to http://localhost:5173
+  3. You should see the Login page.
+
+
+================================================================================
+  4. LOGIN CREDENTIALS
+================================================================================
+
+  After seeding, use these credentials:
+
+  Role        Identifier          Password
+  ----        ----------          --------
+  Admin       admin@campus.com    admin123
+  Admin(alt)  admn@project.com    password123
+  Faculty     FAC001              faculty123
+  Faculty     FAC002              faculty123
+  Faculty     FAC003              faculty123
+  Faculty     FAC004              faculty123
+  Faculty     FAC005              faculty123
+  Student     21CSE001            student123
+  Student     21CSE002..21CSE010  student123
+  Student     21ECE001..21ECE010  student123
+
+  The login page has role tabs. Select the correct role
+  before entering credentials.
+
+
+================================================================================
+  5. RUNNING THE APP (QUICK REFERENCE)
+================================================================================
+
+  Every time you want to run the app later:
+
+  1. Start MongoDB (if not running automatically):
+         net start MongoDB
+
+  2. Start Backend (Terminal 1):
+         cd path\to\smart-campus\backend
+         npm start
+
+  3. Start Frontend (Terminal 2):
+         cd path\to\smart-campus\frontend
+         npm run dev
+
+  4. Open http://localhost:5173 in your browser.
+
+
+================================================================================
+  6. WINDOWS-SPECIFIC NOTES
+================================================================================
+
+  Path Length Issues:
+    If npm install fails with long path errors:
+         git config --system core.longpaths true
+    Or move project to a shorter path (e.g., C:\smart-campus).
+
+  File Path Separators:
+    The code uses forward slashes (/) - works fine on Windows
+    with Node.js.
+
+  Firewall Prompts:
+    Windows Firewall may ask to allow Node.js connections.
+    Click Allow for both Private and Public networks.
+
+  Command Prompt vs PowerShell:
+    All commands work in Command Prompt (cmd) and PowerShell.
+
+  Port Conflicts:
+    If port 5000 is in use, change in backend\.env:
+         PORT=5001
+    Vite auto-finds next available port if 5173 is taken.
+
+
+================================================================================
+  7. TROUBLESHOOTING
+================================================================================
+
+  PROBLEM: "MongoDB connection error" or "ECONNREFUSED"
+  CAUSE: MongoDB is not running.
+  FIX:
+         net start MongoDB
+    If the service is not installed, use MongoDB Atlas.
+
+  PROBLEM: "npm install" fails
+  FIX:
+         del node_modules /s /q
+         del package-lock.json
+         npm install
+    Or:
+         npm install --no-optional
+
+  PROBLEM: "MODULE_NOT_FOUND" errors
+  CAUSE: npm install not run in correct directory.
+  FIX:
+         cd backend
+         npm install
+
+  PROBLEM: Port already in use (5000)
+  FIX 1 - Kill process:
+         netstat -ano | findstr :5000
+         taskkill /PID <PID> /F
+  FIX 2 - Change port in backend\.env:
+         PORT=5001
+    Then update frontend\vite.config.js proxy target.
+
+  PROBLEM: "SyntaxError" or unexpected token
+  CAUSE: Older version of Node.js.
+  FIX: Install Node.js 18+.
+
+  PROBLEM: CORS errors in browser
+  CAUSE: Backend not running or wrong URL.
+  FIX: Ensure backend terminal shows "Server running on port 5000".
+       Check Vite proxy in vite.config.js targets localhost:5000.
+
+
+================================================================================
+  8. MONGODB ATLAS ALTERNATIVE (No Local Install)
+================================================================================
+
+  1. Go to https://cloud.mongodb.com/ and sign up / log in.
+  2. Create a free M0 cluster (any cloud provider/region).
+  3. Under Database Access, create a database user.
+  4. Under Network Access, add 0.0.0.0/0 (all IPs).
+  5. Click Connect > Drivers > copy connection string.
+  6. Example:
+       mongodb+srv://<user>:<pass>@cluster0.xxxxx.mongodb.net/...
+  7. Replace <user> and <pass> with your credentials.
+  8. Paste into backend\.env as MONGO_URI:
+       MONGO_URI=mongodb+srv://user:pass@cluster0.xxxxx.mongodb.net/smart_campus?retryWrites=true&w=majority
+  9. Proceed with "npm run seed".
+
+
+================================================================================
+  9. USING DOCKER FOR MONGODB
+================================================================================
+
+  If you have Docker Desktop on Windows:
+
+  1. Open PowerShell or Command Prompt.
+  2. Run:
+         docker run -d -p 27017:27017 --name mongo mongo:7
+  3. MongoDB is available at mongodb://localhost:27017.
+  4. Proceed with backend setup.
+  5. To stop:
+         docker stop mongo
+  6. To start again:
+         docker start mongo
+
+
+================================================================================
+  10. STOPPING THE APPLICATION
+================================================================================
+
+  Backend:   Press Ctrl + C in the backend terminal, then Y.
+  Frontend:  Press Ctrl + C in the frontend terminal, then Y.
+  MongoDB:   If running as service, no action needed.
+  Docker:    docker stop mongo
+
+
+================================================================================
+  TECH STACK SUMMARY
+================================================================================
+
+  Layer         Technology
+  -----         ----------
+  Frontend      React 19, Vite 8, Tailwind CSS 3, React Router 7
+  Backend       Node.js, Express 4
+  Database      MongoDB (Mongoose ODM)
+  Auth          JWT (jsonwebtoken + bcryptjs)
+  File Upload   Multer
+  Charts        Recharts
+  Icons         Lucide React
+  HTTP Client   Axios
+  Notifications react-hot-toast
+
+
+================================================================================
+  USEFUL SCRIPTS
+================================================================================
+
+  Backend (backend/package.json):
+    npm start        Start the backend server
+    npm run seed     Seed database with sample data
+    npm run migrate  Migrate from legacy SQLite to MongoDB
+
+  Frontend (frontend/package.json):
+    npm run dev      Start development server
+    npm run build    Create production build
+    npm run lint     Lint source code
+    npm run preview  Preview production build
+
+================================================================================
+  END OF SETUP GUIDE
+================================================================================
