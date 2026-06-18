@@ -280,7 +280,28 @@ The system uses **MongoDB** with **Mongoose ODM**. Each table is a Mongoose mode
 - npm
 - MongoDB (local, Docker, or Atlas)
 
-### Backend Setup
+### Option A — Docker (Recommended for Portability)
+
+No Node.js or MongoDB installation needed — just Docker.
+
+```bash
+# Start all services
+docker compose up --build
+
+# In another terminal, seed the database (first time only)
+docker compose exec backend npm run seed
+```
+
+Open `http://localhost:5173` in your browser.
+
+To stop:
+```bash
+docker compose down
+```
+
+### Option B — Manual Setup
+
+#### Backend Setup
 
 ```bash
 cd backend
@@ -297,13 +318,13 @@ MONGO_URI=mongodb://localhost:27017/smart_campus
 
 Set `MONGO_URI` to your MongoDB connection string (local: `mongodb://localhost:27017/smart_campus`, Docker: same, Atlas: your cluster URI).
 
-**Option A — Seed fresh data:**
+**Option B1 — Seed fresh data:**
 
 ```bash
 npm run seed
 ```
 
-**Option B — Migrate from existing SQLite database:**
+**Option B2 — Migrate from existing SQLite database:**
 
 If you have a `backend/db/campus.db` from the previous SQLite version:
 
@@ -318,7 +339,7 @@ npm start
 # Server runs on http://localhost:5000
 ```
 
-### Frontend Setup
+#### Frontend Setup
 
 ```bash
 cd frontend

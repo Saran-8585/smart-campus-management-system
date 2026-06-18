@@ -31,9 +31,11 @@ A step-by-step guide to set up and run the **Smart Campus Digital System** (MERN
 
 | Software | Version | Purpose |
 |----------|---------|---------|
-| Node.js | 18 or later | JavaScript runtime (includes npm) |
-| npm | Comes with Node.js | Package manager |
-| MongoDB | 7.x or later | Database |
+| Docker | 24+ | Container runtime (replaces Node.js + MongoDB install) |
+| — or — | | |
+| Node.js | 18 or later | JavaScript runtime (manual setup only) |
+| npm | Comes with Node.js | Package manager (manual setup only) |
+| MongoDB | 7.x or later | Database (manual setup only) |
 
 ---
 
@@ -198,6 +200,70 @@ The frontend development server is now running at `http://localhost:5173`.
 
 ---
 
+## Docker Setup (Easiest — No Manual Installs)
+
+If you have **Docker** installed, you can skip installing Node.js and MongoDB entirely.
+
+### Quick Start
+
+```cmd
+:: 1. Start all services (MongoDB + Backend + Frontend)
+docker compose up --build
+
+:: 2. Open a second terminal and seed the database (first time only)
+docker compose exec backend npm run seed
+```
+
+Open `http://localhost:5173` in your browser.
+
+### How It Works
+
+The `docker-compose.yml` at the project root defines three services:
+
+| Service | Image / Build | Port | Purpose |
+|---------|---------------|------|---------|
+| `mongo` | `mongo:7` | `27017` | Database |
+| `backend` | `./backend/Dockerfile` | `5000` | Express API |
+| `frontend` | `./frontend/Dockerfile` | `5173` | Vite dev server |
+
+- The backend connects to MongoDB via the internal Docker hostname `mongo`.
+- The frontend proxies `/api` requests to the `backend` service.
+- Source code is mounted as volumes — changes are reflected immediately (hot-reload on both frontend and backend with `nodemon`).
+
+### Useful Commands
+
+```cmd
+:: Rebuild and start
+docker compose up --build
+
+:: Start in background (detached)
+docker compose up --build -d
+
+:: View logs
+docker compose logs -f
+
+:: Stop all services
+docker compose down
+
+:: Run seed (re-populate database)
+docker compose exec backend npm run seed
+
+:: Open a shell inside a container
+docker compose exec backend sh
+docker compose exec frontend sh
+```
+
+### Transporting to Another Laptop
+
+1. Copy the entire project folder to the new laptop.
+2. Install Docker on the new laptop.
+3. Run `docker compose up --build`.
+4. Run `docker compose exec backend npm run seed` (first time only).
+
+No Node.js, npm, or MongoDB installation needed on the new machine.
+
+---
+
 ## Login Credentials
 
 After seeding, use these credentials:
@@ -221,7 +287,19 @@ After seeding, use these credentials:
 
 ## Running the App (Quick Reference)
 
-Every time you want to run the application later:
+### With Docker (Recommended)
+
+```cmd
+:: Start everything
+docker compose up
+
+:: Seed database (first time only)
+docker compose exec backend npm run seed
+```
+
+Open `http://localhost:5173` in your browser.
+
+### Without Docker (Manual)
 
 1. **Start MongoDB** (if not running automatically):
    ```cmd
@@ -363,34 +441,17 @@ If you do not want to install MongoDB locally:
 
 ---
 
-## Using Docker for MongoDB
-
-If you have **Docker Desktop** installed on Windows:
-
-1. Open **PowerShell** or **Command Prompt**.
-2. Run:
-   ```cmd
-   docker run -d -p 27017:27017 --name mongo mongo:7
-   ```
-3. MongoDB is now available at `mongodb://localhost:27017`.
-4. Proceed with [Step 5 — Backend Setup](#5-backend-setup).
-5. To stop MongoDB later:
-   ```cmd
-   docker stop mongo
-   ```
-6. To start it again:
-   ```cmd
-   docker start mongo
-   ```
-
----
-
 ## Stopping the Application
 
+### With Docker
+```cmd
+docker compose down
+```
+
+### Without Docker
 - **Backend**: Press `Ctrl + C` in the backend terminal, then type `Y` if prompted.
 - **Frontend**: Press `Ctrl + C` in the frontend terminal, then type `Y` if prompted.
 - **MongoDB** (if running as service): It runs in the background — no action needed.
-- **MongoDB** (Docker): `docker stop mongo`
 
 ---
 
