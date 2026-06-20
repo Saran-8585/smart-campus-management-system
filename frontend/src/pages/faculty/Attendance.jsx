@@ -28,9 +28,12 @@ export default function FacultyAttendance() {
   }, [])
 
   useEffect(() => {
-    if (!selectedSubject || !date) return
+    if (!selectedSubject) return
     setLoading(true)
-    api.get(`/attendance/${selectedSubject}?date=${date}`)
+    const url = viewHistory
+      ? `/attendance/${selectedSubject}`
+      : `/attendance/${selectedSubject}?date=${date}`
+    api.get(url)
       .then((res) => {
         setStudents(res.data.students)
         setExistingRecords(res.data.records)
@@ -42,7 +45,7 @@ export default function FacultyAttendance() {
       })
       .catch(() => toast.error('Failed to load attendance'))
       .finally(() => setLoading(false))
-  }, [selectedSubject, date])
+  }, [selectedSubject, date, viewHistory])
 
   const setStatus = (studentId, status) => {
     setRecords((prev) => ({ ...prev, [studentId]: status }))
@@ -55,7 +58,7 @@ export default function FacultyAttendance() {
     }))
     setSaving(true)
     try {
-      await api.post('/attendance', { subject_id: Number(selectedSubject), date, records: recordsPayload })
+      await api.post('/attendance', { subject_id: selectedSubject, date, records: recordsPayload })
       toast.success('Attendance saved')
       const res = await api.get(`/attendance/${selectedSubject}?date=${date}`)
       setStudents(res.data.students)
@@ -76,7 +79,7 @@ export default function FacultyAttendance() {
     s.name.toLowerCase().includes(search.toLowerCase())
   )
 
-  const subjectName = subjects.find((s) => s.id === Number(selectedSubject))?.name || ''
+  const subjectName = subjects.find((s) => s.id === selectedSubject)?.name || ''
 
   return (
     <div>

@@ -6,7 +6,9 @@ async function getTimetable(req, res) {
   try {
     const user = req.user;
     const includeInactive = req.query.include_inactive === 'true';
+    const semester = req.query.semester ? Number(req.query.semester) : null;
     const activeFilter = includeInactive ? {} : { is_active: 1 };
+    if (semester) activeFilter.semester = semester;
     let rows;
 
     if (user.role === 'admin') {

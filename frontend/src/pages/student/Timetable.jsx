@@ -5,17 +5,21 @@ import toast from 'react-hot-toast'
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 const dayMap = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday' }
+const semesters = [1, 2, 3, 4, 5, 6, 7, 8]
 
 export default function StudentTimetable() {
   const [timetable, setTimetable] = useState([])
   const [loading, setLoading] = useState(true)
+  const [semesterFilter, setSemesterFilter] = useState('')
 
   useEffect(() => {
-    api.get('/timetable')
+    setLoading(true)
+    const params = semesterFilter ? `?semester=${semesterFilter}` : ''
+    api.get(`/timetable${params}`)
       .then((res) => setTimetable(res.data))
       .catch(() => toast.error('Failed to load timetable'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [semesterFilter])
 
   const groupedByDay = days.map((day) => ({
     day,
@@ -32,7 +36,14 @@ export default function StudentTimetable() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">My Timetable</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">My Timetable</h1>
+        <select value={semesterFilter} onChange={(e) => setSemesterFilter(e.target.value)}
+          className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+          <option value="">All Semesters</option>
+          {semesters.map((s) => <option key={s} value={s}>Sem {s}</option>)}
+        </select>
+      </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         {timetable.length === 0 ? (

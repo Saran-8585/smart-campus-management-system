@@ -22,6 +22,7 @@ import FacultyDashboard from './pages/faculty/Dashboard'
 import FacultyAttendance from './pages/faculty/Attendance'
 import FacultyNotices from './pages/faculty/Notices'
 import FacultyStudents from './pages/faculty/Students'
+import FacultyMarks from './pages/faculty/Marks'
 
 // Student pages
 import StudentDashboard from './pages/student/Dashboard'
@@ -29,11 +30,15 @@ import StudentTimetable from './pages/student/Timetable'
 import StudentAttendance from './pages/student/Attendance'
 import StudentNotices from './pages/student/Notices'
 import StudentProfile from './pages/student/Profile'
+import StudentMarks from './pages/student/Marks'
 
 // Shared pages
 import ClassroomStatus from './pages/ClassroomStatus'
 import CampusNavigation from './pages/CampusNavigation'
 import LostFound from './pages/LostFound'
+
+// Admin pages
+import AdminMarks from './pages/admin/Marks'
 
 function DashboardRedirect() {
   return <Navigate to="/login" replace />
@@ -52,6 +57,7 @@ export default function App() {
         <Route path="notices" element={<AdminNotices />} />
         <Route path="timetable" element={<AdminTimetable />} />
         <Route path="reports" element={<AdminReports />} />
+        <Route path="marks" element={<AdminMarks />} />
         <Route path="classroom-status" element={<ClassroomStatus />} />
         <Route path="navigation-history" element={<AdminNavigationHistory />} />
         <Route path="lost-found" element={<AdminLostFoundPanel />} />
@@ -61,6 +67,7 @@ export default function App() {
       <Route path="/faculty" element={<ProtectedRoute roles={['faculty']}><Layout role="faculty" /></ProtectedRoute>}>
         <Route index element={<FacultyDashboard />} />
         <Route path="attendance" element={<FacultyAttendance />} />
+        <Route path="marks" element={<FacultyMarks />} />
         <Route path="notices" element={<FacultyNotices />} />
         <Route path="students" element={<FacultyStudents />} />
         <Route path="classroom-status" element={<ClassroomStatus />} />
@@ -73,6 +80,7 @@ export default function App() {
         <Route index element={<StudentDashboard />} />
         <Route path="timetable" element={<StudentTimetable />} />
         <Route path="attendance" element={<StudentAttendance />} />
+        <Route path="marks" element={<StudentMarks />} />
         <Route path="notices" element={<StudentNotices />} />
         <Route path="profile" element={<StudentProfile />} />
         <Route path="classroom-status" element={<ClassroomStatus />} />

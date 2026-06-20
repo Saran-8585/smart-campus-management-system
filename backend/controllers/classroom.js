@@ -5,8 +5,17 @@ const TIMEZONE = process.env.TIMEZONE || 'Asia/Kolkata';
 function getCurrentTimeInTimezone() {
   const now = new Date();
   const dayName = new Intl.DateTimeFormat('en-US', { timeZone: TIMEZONE, weekday: 'long' }).format(now);
-  const timeStr = new Intl.DateTimeFormat('en-US', { timeZone: TIMEZONE, hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
-  return { dayName, timeStr };
+  const formatter = new Intl.DateTimeFormat('en-US', { timeZone: TIMEZONE, hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' });
+  const parts = formatter.formatToParts(now);
+  const h = parseInt(parts.find(p => p.type === 'hour').value, 10);
+  const m = parseInt(parts.find(p => p.type === 'minute').value, 10);
+  const currentMinutes = h * 60 + m;
+  return { dayName, currentMinutes };
+}
+
+function timeToMinutes(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
 }
 
 async function status(req, res) {
@@ -16,24 +25,24 @@ async function status(req, res) {
       return res.status(400).json({ error: 'Room number is required' });
     }
 
-    const { dayName: currentDay, timeStr: currentTime } = getCurrentTimeInTimezone();
+    const { dayName: currentDay, currentMinutes } = getCurrentTimeInTimezone();
 
     if (currentDay === 'Sunday' || currentDay === 'Saturday') {
       return res.json({ current: null, upcoming_today: [] });
     }
 
-    const current = await Timetable.findOne({
+    const allToday = await Timetable.find({
       room, day: currentDay,
-      start_time: { $lte: currentTime },
-      end_time: { $gte: currentTime },
-      is_active: 1,
-    }).populate('subject_id', 'name code').limit(1);
-
-    const upcoming = await Timetable.find({
-      room, day: currentDay,
-      start_time: { $gt: currentTime },
       is_active: 1,
     }).populate('subject_id', 'name code').sort({ start_time: 1 });
+
+    const current = allToday.find(t => {
+      const start = timeToMinutes(t.start_time);
+      const end = timeToMinutes(t.end_time);
+      return currentMinutes >= start && currentMinutes < end;
+    }) || null;
+
+    const upcoming = allToday.filter(t => timeToMinutes(t.start_time) > currentMinutes);
 
     const mapEntry = (t) => t ? {
       id: t.id, _id: t._id, subject_id: t.subject_id?._id || t.subject_id,

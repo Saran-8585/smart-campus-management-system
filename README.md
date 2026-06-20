@@ -37,7 +37,8 @@ smart-campus-digital-system/
 │   │   ├── NavigationPlace.js
 │   │   ├── NavigationHistory.js
 │   │   ├── LostFoundItem.js
-│   │   └── LostFoundClaim.js
+│   │   ├── LostFoundClaim.js
+│   │   └── Marks.js
 │   ├── routes/             # Express route definitions
 │   ├── uploads/
 │   │   └── lost-found/     # Uploaded item images
@@ -205,6 +206,7 @@ The system uses **MongoDB** with **Mongoose ODM**. Each table is a Mongoose mode
 - **NavigationHistory** → `backend/models/NavigationHistory.js`
 - **LostFoundItem** → `backend/models/LostFoundItem.js`
 - **LostFoundClaim** → `backend/models/LostFoundClaim.js`
+- **Marks** → `backend/models/Marks.js`
 
 ---
 
@@ -226,7 +228,7 @@ The system uses **MongoDB** with **Mongoose ODM**. Each table is a Mongoose mode
 ### Timetable
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| GET | `/api/timetable` | Yes | List timetable (?include_inactive=true) |
+| GET | `/api/timetable` | Yes | List timetable (?include_inactive=true&semester=) |
 | POST | `/api/timetable` | Admin | Add entry |
 | PUT | `/api/timetable/:id` | Admin | Soft-update entry |
 | DELETE | `/api/timetable/:id` | Admin | Soft-deactivate entry |
@@ -289,7 +291,7 @@ No Node.js or MongoDB installation needed — just Docker.
 docker compose up --build
 
 # In another terminal, seed the database (first time only)
-docker compose exec backend npm run seed
+docker compose run --rm seed
 ```
 
 Open `http://localhost:5173` in your browser.

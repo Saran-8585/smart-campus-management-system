@@ -211,24 +211,25 @@ If you have **Docker** installed, you can skip installing Node.js and MongoDB en
 docker compose up --build
 
 :: 2. Open a second terminal and seed the database (first time only)
-docker compose exec backend npm run seed
+docker compose run --rm seed
 ```
 
 Open `http://localhost:5173` in your browser.
 
 ### How It Works
 
-The `docker-compose.yml` at the project root defines three services:
+The `docker-compose.yml` at the project root defines four services:
 
 | Service | Image / Build | Port | Purpose |
 |---------|---------------|------|---------|
 | `mongo` | `mongo:7` | `27017` | Database |
 | `backend` | `./backend/Dockerfile` | `5000` | Express API |
-| `frontend` | `./frontend/Dockerfile` | `5173` | Vite dev server |
+| `frontend` | `./frontend/Dockerfile` | `5173` | Nginx (serves production build) |
+| `seed` | `./backend/Dockerfile` | — | One-time data seeder (`run --rm`) |
 
 - The backend connects to MongoDB via the internal Docker hostname `mongo`.
-- The frontend proxies `/api` requests to the `backend` service.
-- Source code is mounted as volumes — changes are reflected immediately (hot-reload on both frontend and backend with `nodemon`).
+- The frontend Nginx serves a production build and proxies `/api` and `/uploads` to the backend.
+- Backend runs in production mode (no hot-reload). For development, use the manual setup above.
 
 ### Useful Commands
 
@@ -246,7 +247,7 @@ docker compose logs -f
 docker compose down
 
 :: Run seed (re-populate database)
-docker compose exec backend npm run seed
+docker compose run --rm seed
 
 :: Open a shell inside a container
 docker compose exec backend sh
@@ -258,7 +259,7 @@ docker compose exec frontend sh
 1. Copy the entire project folder to the new laptop.
 2. Install Docker on the new laptop.
 3. Run `docker compose up --build`.
-4. Run `docker compose exec backend npm run seed` (first time only).
+4. Run `docker compose run --rm seed` (first time only).
 
 No Node.js, npm, or MongoDB installation needed on the new machine.
 
@@ -294,7 +295,7 @@ After seeding, use these credentials:
 docker compose up
 
 :: Seed database (first time only)
-docker compose exec backend npm run seed
+docker compose run --rm seed
 ```
 
 Open `http://localhost:5173` in your browser.

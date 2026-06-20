@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Subject = require('../models/Subject');
 const Timetable = require('../models/Timetable');
 const Attendance = require('../models/Attendance');
+const Marks = require('../models/Marks');
 const Notice = require('../models/Notice');
 const Enrollment = require('../models/Enrollment');
 const NavigationPlace = require('../models/NavigationPlace');
@@ -21,6 +22,7 @@ async function seed() {
     LostFoundItem.deleteMany({}),
     NavigationHistory.deleteMany({}),
     NavigationPlace.deleteMany({}),
+    Marks.deleteMany({}),
     Attendance.deleteMany({}),
     Timetable.deleteMany({}),
     Enrollment.deleteMany({}),
@@ -275,6 +277,30 @@ async function seed() {
     await Attendance.insertMany(attendanceBatch, { ordered: false });
   } catch (e) {
     console.log('  (some duplicate attendance records skipped)');
+  }
+
+  console.log('Seeding marks records...');
+  const markTypes = ['Mid', 'Final', 'Assignment'];
+  const markScores = { Mid: { max: 50, get: () => Math.floor(Math.random() * 31) + 20 }, Final: { max: 100, get: () => Math.floor(Math.random() * 41) + 60 }, Assignment: { max: 20, get: () => Math.floor(Math.random() * 11) + 10 } };
+  const marksBatch = [];
+  for (const sid of studentIds) {
+    const deptSubjects = cseStudentIds.includes(sid) ? cseSubjectIds : eceSubjectIds;
+    for (const subId of deptSubjects) {
+      const subject = subjects.find(s => s._id.equals(subId));
+      for (const examType of markTypes) {
+        const score = markScores[examType];
+        marksBatch.push({
+          student_id: sid, subject_id: subId,
+          exam_type: examType, marks_obtained: score.get(),
+          max_marks: score.max, semester: subject.semester,
+        });
+      }
+    }
+  }
+  try {
+    await Marks.insertMany(marksBatch, { ordered: false });
+  } catch (e) {
+    console.log('  (some duplicate marks records skipped)');
   }
 
   console.log('Seeding notices...');

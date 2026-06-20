@@ -46,7 +46,7 @@ export default function StudentDashboard() {
   })
 
   const attPercentages = Object.entries(attBySubject).map(([id, data]) => ({
-    subject_id: Number(id),
+    subject_id: id,
     ...data,
     percentage: Math.round((data.present / data.total) * 100),
   }))
