@@ -27,7 +27,7 @@ export default function Login() {
   }
 
   const getPlaceholder = () => {
-    if (selectedRole === 'student') return 'e.g. 21CSE001'
+    if (selectedRole === 'student') return 'e.g. 22CSE001'
     if (selectedRole === 'faculty') return 'e.g. FAC001'
     return 'Enter your email'
   }
@@ -174,9 +174,21 @@ export default function Login() {
                 className="w-full text-left px-3 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-xs text-blue-700 font-medium transition-colors">
                 Faculty: FAC001 / faculty123
               </button>
-              <button type="button" onClick={() => quickFill('student', '21CSE001', 'student123')}
+              <button type="button" onClick={() => quickFill('student', '22CSE001', 'student123')}
                 className="w-full text-left px-3 py-2 rounded-lg bg-green-50 hover:bg-green-100 text-xs text-green-700 font-medium transition-colors">
-                Student: 21CSE001 / student123
+                Student: 22CSE001 / student123
+              </button>
+              <button type="button" onClick={() => quickFill('student', '22CSE002', 'student123')}
+                className="w-full text-left px-3 py-2 rounded-lg bg-green-50 hover:bg-green-100 text-xs text-green-700 font-medium transition-colors">
+                Student: 22CSE002 / student123
+              </button>
+              <button type="button" onClick={() => quickFill('student', '22ECE001', 'student123')}
+                className="w-full text-left px-3 py-2 rounded-lg bg-green-50 hover:bg-green-100 text-xs text-green-700 font-medium transition-colors">
+                Student: 22ECE001 / student123
+              </button>
+              <button type="button" onClick={() => quickFill('student', '25ECE010', 'student123')}
+                className="w-full text-left px-3 py-2 rounded-lg bg-green-50 hover:bg-green-100 text-xs text-green-700 font-medium transition-colors">
+                Student: 25ECE010 / student123
               </button>
             </div>
           </div>

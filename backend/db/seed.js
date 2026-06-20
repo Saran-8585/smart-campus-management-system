@@ -33,23 +33,32 @@ async function seed() {
 
   const hash = (pw) => bcrypt.hashSync(pw, 10);
 
+  console.log('Rebuilding indexes...');
+  await User.collection.dropIndex('register_number_1').catch(() => {});
+  await User.collection.dropIndex('staff_id_1').catch(() => {});
+  await User.syncIndexes();
+
   console.log('Seeding users...');
 
   const userData = [
-    { name: 'Dr. Arjun Mehta', email: 'admin@campus.com', password: hash('admin123'), role: 'admin', department: 'Administration', phone: '9876543210', register_number: null, staff_id: 'ADM001' },
-    { name: 'System Admin', email: 'admn@project.com', password: hash('password123'), role: 'admin', department: 'Administration', phone: '9876543211', register_number: null, staff_id: 'ADM002' },
-    { name: 'Prof. Priya Sharma', email: 'faculty1@campus.com', password: hash('faculty123'), role: 'faculty', department: 'CSE', phone: '9876543212', register_number: null, staff_id: 'FAC001' },
-    { name: 'Prof. Rahul Verma', email: 'faculty2@campus.com', password: hash('faculty123'), role: 'faculty', department: 'CSE', phone: '9876543213', register_number: null, staff_id: 'FAC002' },
-    { name: 'Prof. Anita Rao', email: 'faculty3@campus.com', password: hash('faculty123'), role: 'faculty', department: 'CSE', phone: '9876543214', register_number: null, staff_id: 'FAC003' },
-    { name: 'Prof. Suresh Kumar', email: 'faculty4@campus.com', password: hash('faculty123'), role: 'faculty', department: 'ECE', phone: '9876543215', register_number: null, staff_id: 'FAC004' },
-    { name: 'Prof. Deepa Nair', email: 'faculty5@campus.com', password: hash('faculty123'), role: 'faculty', department: 'ECE', phone: '9876543216', register_number: null, staff_id: 'FAC005' },
+    { name: 'Dr. Arjun Mehta', email: 'admin@campus.com', password: hash('admin123'), role: 'admin', department: 'Administration', phone: '9876543210', staff_id: 'ADM001' },
+    { name: 'System Admin', email: 'admn@project.com', password: hash('password123'), role: 'admin', department: 'Administration', phone: '9876543211', staff_id: 'ADM002' },
+    { name: 'Prof. Priya Sharma', email: 'faculty1@campus.com', password: hash('faculty123'), role: 'faculty', department: 'CSE', phone: '9876543212', staff_id: 'FAC001' },
+    { name: 'Prof. Rahul Verma', email: 'faculty2@campus.com', password: hash('faculty123'), role: 'faculty', department: 'CSE', phone: '9876543213', staff_id: 'FAC002' },
+    { name: 'Prof. Anita Rao', email: 'faculty3@campus.com', password: hash('faculty123'), role: 'faculty', department: 'CSE', phone: '9876543214', staff_id: 'FAC003' },
+    { name: 'Prof. Suresh Kumar', email: 'faculty4@campus.com', password: hash('faculty123'), role: 'faculty', department: 'ECE', phone: '9876543215', staff_id: 'FAC004' },
+    { name: 'Prof. Deepa Nair', email: 'faculty5@campus.com', password: hash('faculty123'), role: 'faculty', department: 'ECE', phone: '9876543216', staff_id: 'FAC005' },
   ];
 
-  for (let i = 1; i <= 10; i++) {
-    userData.push({ name: `Student ${i} CSE`, email: `student${i}@campus.com`, password: hash('student123'), role: 'student', department: 'CSE', phone: `98765432${40 + i}`, register_number: `21CSE${String(i).padStart(3, '0')}`, staff_id: null });
+  const cseBatches = [22, 22, 22, 23, 23, 23, 24, 24, 25, 25];
+  const eceBatches = [22, 22, 22, 23, 23, 23, 24, 24, 25, 25];
+  for (let i = 0; i < 10; i++) {
+    const seq = String(i + 1).padStart(3, '0');
+    userData.push({ name: `Student ${i + 1} CSE`, email: `student${i + 1}@campus.com`, password: hash('student123'), role: 'student', department: 'CSE', phone: `98765432${41 + i}`, register_number: `${cseBatches[i]}CSE${seq}` });
   }
-  for (let i = 11; i <= 20; i++) {
-    userData.push({ name: `Student ${i} ECE`, email: `student${i}@campus.com`, password: hash('student123'), role: 'student', department: 'ECE', phone: `98765433${i - 10}`, register_number: `21ECE${String(i - 10).padStart(3, '0')}`, staff_id: null });
+  for (let i = 0; i < 10; i++) {
+    const seq = String(i + 1).padStart(3, '0');
+    userData.push({ name: `Student ${i + 11} ECE`, email: `student${i + 11}@campus.com`, password: hash('student123'), role: 'student', department: 'ECE', phone: `98765433${i + 1}`, register_number: `${eceBatches[i]}ECE${seq}` });
   }
 
   const users = await User.insertMany(userData);
@@ -68,11 +77,21 @@ async function seed() {
     { name: 'Digital Electronics', code: 'ECE201', department: 'ECE', semester: 3, credits: 4, faculty_id: facultyIds[3] },
     { name: 'Signal Processing', code: 'ECE301', department: 'ECE', semester: 5, credits: 3, faculty_id: facultyIds[4] },
     { name: 'Embedded Systems', code: 'ECE401', department: 'ECE', semester: 7, credits: 4, faculty_id: facultyIds[3] },
+    { name: 'Programming Fundamentals', code: 'CSE101', department: 'CSE', semester: 1, credits: 4, faculty_id: facultyIds[0] },
+    { name: 'Object Oriented Programming', code: 'CSE102', department: 'CSE', semester: 2, credits: 4, faculty_id: facultyIds[1] },
+    { name: 'Database Management Systems', code: 'CSE203', department: 'CSE', semester: 4, credits: 3, faculty_id: facultyIds[2] },
+    { name: 'Computer Networks', code: 'CSE302', department: 'CSE', semester: 6, credits: 3, faculty_id: facultyIds[0] },
+    { name: 'Project Work', code: 'CSE401', department: 'CSE', semester: 8, credits: 4, faculty_id: facultyIds[1] },
+    { name: 'Basic Electronics', code: 'ECE101', department: 'ECE', semester: 1, credits: 4, faculty_id: facultyIds[3] },
+    { name: 'Circuit Analysis', code: 'ECE102', department: 'ECE', semester: 2, credits: 4, faculty_id: facultyIds[4] },
+    { name: 'Microprocessors', code: 'ECE202', department: 'ECE', semester: 4, credits: 3, faculty_id: facultyIds[3] },
+    { name: 'VLSI Design', code: 'ECE302', department: 'ECE', semester: 6, credits: 3, faculty_id: facultyIds[4] },
+    { name: 'Project Work', code: 'ECE402', department: 'ECE', semester: 8, credits: 4, faculty_id: facultyIds[3] },
   ];
   const subjects = await Subject.insertMany(subjectData);
   const subjectIds = subjects.map(s => s._id);
-  const cseSubjectIds = [subjectIds[0], subjectIds[1], subjectIds[2]];
-  const eceSubjectIds = [subjectIds[3], subjectIds[4], subjectIds[5]];
+  const cseSubjectIds = [subjectIds[0], subjectIds[1], subjectIds[2], subjectIds[6], subjectIds[7], subjectIds[8], subjectIds[9], subjectIds[10]];
+  const eceSubjectIds = [subjectIds[3], subjectIds[4], subjectIds[5], subjectIds[11], subjectIds[12], subjectIds[13], subjectIds[14], subjectIds[15]];
 
   console.log('Seeding enrollments...');
   const enrollmentData = [];
@@ -123,6 +142,26 @@ async function seed() {
     { subject_id: subjectIds[2], day: 'Wednesday', start_time: '15:00', end_time: '16:30', room: 'B103', semester: 5, faculty_name: 'Prof. Anita Rao', department: 'CSE', section: 'CSE-A' },
     { subject_id: subjectIds[3], day: 'Thursday', start_time: '15:00', end_time: '16:30', room: 'B104', semester: 3, faculty_name: 'Prof. Suresh Kumar', department: 'ECE', section: 'ECE-A' },
     { subject_id: subjectIds[4], day: 'Friday', start_time: '15:00', end_time: '16:30', room: 'B105', semester: 5, faculty_name: 'Prof. Deepa Nair', department: 'ECE', section: 'ECE-A' },
+    { subject_id: subjectIds[6], day: 'Monday', start_time: '08:00', end_time: '09:30', room: 'J105', semester: 1, faculty_name: 'Prof. Priya Sharma', department: 'CSE', section: 'CSE-A' },
+    { subject_id: subjectIds[6], day: 'Wednesday', start_time: '08:00', end_time: '09:30', room: 'J106', semester: 1, faculty_name: 'Prof. Priya Sharma', department: 'CSE', section: 'CSE-A' },
+    { subject_id: subjectIds[7], day: 'Tuesday', start_time: '08:00', end_time: '09:30', room: 'J105', semester: 2, faculty_name: 'Prof. Rahul Verma', department: 'CSE', section: 'CSE-A' },
+    { subject_id: subjectIds[7], day: 'Thursday', start_time: '08:00', end_time: '09:30', room: 'J106', semester: 2, faculty_name: 'Prof. Rahul Verma', department: 'CSE', section: 'CSE-A' },
+    { subject_id: subjectIds[8], day: 'Monday', start_time: '10:30', end_time: '12:00', room: 'J107', semester: 4, faculty_name: 'Prof. Anita Rao', department: 'CSE', section: 'CSE-A' },
+    { subject_id: subjectIds[8], day: 'Friday', start_time: '10:30', end_time: '12:00', room: 'J108', semester: 4, faculty_name: 'Prof. Anita Rao', department: 'CSE', section: 'CSE-A' },
+    { subject_id: subjectIds[9], day: 'Wednesday', start_time: '10:30', end_time: '12:00', room: 'J109', semester: 6, faculty_name: 'Prof. Priya Sharma', department: 'CSE', section: 'CSE-A' },
+    { subject_id: subjectIds[9], day: 'Friday', start_time: '08:00', end_time: '09:30', room: 'J110', semester: 6, faculty_name: 'Prof. Priya Sharma', department: 'CSE', section: 'CSE-A' },
+    { subject_id: subjectIds[10], day: 'Tuesday', start_time: '10:30', end_time: '12:00', room: 'J109', semester: 8, faculty_name: 'Prof. Rahul Verma', department: 'CSE', section: 'CSE-A' },
+    { subject_id: subjectIds[10], day: 'Thursday', start_time: '10:30', end_time: '12:00', room: 'J110', semester: 8, faculty_name: 'Prof. Rahul Verma', department: 'CSE', section: 'CSE-A' },
+    { subject_id: subjectIds[11], day: 'Monday', start_time: '08:00', end_time: '09:30', room: 'A105', semester: 1, faculty_name: 'Prof. Suresh Kumar', department: 'ECE', section: 'ECE-A' },
+    { subject_id: subjectIds[11], day: 'Wednesday', start_time: '08:00', end_time: '09:30', room: 'A106', semester: 1, faculty_name: 'Prof. Suresh Kumar', department: 'ECE', section: 'ECE-A' },
+    { subject_id: subjectIds[12], day: 'Tuesday', start_time: '08:00', end_time: '09:30', room: 'A105', semester: 2, faculty_name: 'Prof. Deepa Nair', department: 'ECE', section: 'ECE-A' },
+    { subject_id: subjectIds[12], day: 'Thursday', start_time: '08:00', end_time: '09:30', room: 'A106', semester: 2, faculty_name: 'Prof. Deepa Nair', department: 'ECE', section: 'ECE-A' },
+    { subject_id: subjectIds[13], day: 'Monday', start_time: '10:30', end_time: '12:00', room: 'A107', semester: 4, faculty_name: 'Prof. Suresh Kumar', department: 'ECE', section: 'ECE-A' },
+    { subject_id: subjectIds[13], day: 'Friday', start_time: '10:30', end_time: '12:00', room: 'A108', semester: 4, faculty_name: 'Prof. Suresh Kumar', department: 'ECE', section: 'ECE-A' },
+    { subject_id: subjectIds[14], day: 'Wednesday', start_time: '10:30', end_time: '12:00', room: 'A109', semester: 6, faculty_name: 'Prof. Deepa Nair', department: 'ECE', section: 'ECE-A' },
+    { subject_id: subjectIds[14], day: 'Friday', start_time: '08:00', end_time: '09:30', room: 'A110', semester: 6, faculty_name: 'Prof. Deepa Nair', department: 'ECE', section: 'ECE-A' },
+    { subject_id: subjectIds[15], day: 'Tuesday', start_time: '10:30', end_time: '12:00', room: 'A109', semester: 8, faculty_name: 'Prof. Suresh Kumar', department: 'ECE', section: 'ECE-A' },
+    { subject_id: subjectIds[15], day: 'Thursday', start_time: '10:30', end_time: '12:00', room: 'A110', semester: 8, faculty_name: 'Prof. Suresh Kumar', department: 'ECE', section: 'ECE-A' },
   ];
 
   const timetableDocs = timetableData.map(t => ({
@@ -331,14 +370,14 @@ async function seed() {
   console.log('  Faculty:  FAC003 / faculty123 (Prof. Anita Rao)');
   console.log('  Faculty:  FAC004 / faculty123 (Prof. Suresh Kumar)');
   console.log('  Faculty:  FAC005 / faculty123 (Prof. Deepa Nair)');
-  console.log('  Student:  21CSE001 / student123');
-  console.log('  Student:  21CSE002 / student123');
-  console.log('  Student:  21ECE001 / student123');
-  console.log('  Student:  21ECE010 / student123');
+  console.log('  Student:  22CSE001 / student123');
+  console.log('  Student:  22CSE002 / student123');
+  console.log('  Student:  22ECE001 / student123');
+  console.log('  Student:  25ECE010 / student123');
   console.log('');
   console.log('Login Instructions:');
   console.log('  Admin:    Use email');
-  console.log('  Student:  Use Register Number (e.g. 21CSE001)');
+  console.log('  Student:  Use Register Number (e.g. 22CSE001)');
   console.log('  Faculty:  Use Staff ID (e.g. FAC001)');
   console.log('');
 

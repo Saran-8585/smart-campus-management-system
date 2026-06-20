@@ -171,7 +171,7 @@ export default function AdminTimetable() {
             </div>
             <select value={semesterFilter} onChange={(e) => setSemesterFilter(e.target.value)}
               className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
-              <option value="">All Semesters</option>
+              <option value="">-- Select Semester --</option>
               {semesters.map((s) => <option key={s} value={s}>Sem {s}</option>)}
             </select>
           </div>

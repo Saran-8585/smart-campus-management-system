@@ -2,20 +2,29 @@ import { useState, useEffect } from 'react'
 import { Loader2, Calendar } from 'lucide-react'
 import api from '../../utils/axios'
 import toast from 'react-hot-toast'
+import { useAuth } from '../../context/AuthContext'
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 const dayMap = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday' }
 const semesters = [1, 2, 3, 4, 5, 6, 7, 8]
 
+function inferSemester(registerNumber) {
+  const batch = parseInt(registerNumber?.slice(0, 2), 10)
+  if (!batch || batch < 20) return 1
+  const currentYear = new Date().getFullYear() % 100
+  return Math.min((currentYear - batch) * 2, 8)
+}
+
 export default function StudentTimetable() {
+  const { user } = useAuth()
+  const defaultSem = inferSemester(user?.register_number)
   const [timetable, setTimetable] = useState([])
   const [loading, setLoading] = useState(true)
-  const [semesterFilter, setSemesterFilter] = useState('')
+  const [semesterFilter, setSemesterFilter] = useState(defaultSem)
 
   useEffect(() => {
     setLoading(true)
-    const params = semesterFilter ? `?semester=${semesterFilter}` : ''
-    api.get(`/timetable${params}`)
+    api.get(`/timetable?semester=${semesterFilter}`)
       .then((res) => setTimetable(res.data))
       .catch(() => toast.error('Failed to load timetable'))
       .finally(() => setLoading(false))
@@ -40,7 +49,6 @@ export default function StudentTimetable() {
         <h1 className="text-2xl font-bold text-gray-900">My Timetable</h1>
         <select value={semesterFilter} onChange={(e) => setSemesterFilter(e.target.value)}
           className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
-          <option value="">All Semesters</option>
           {semesters.map((s) => <option key={s} value={s}>Sem {s}</option>)}
         </select>
       </div>
