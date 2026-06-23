@@ -1,7 +1,6 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-COPY node_modules ./node_modules
 RUN npm install --prefer-offline --no-audit --no-fund
 COPY . .
 RUN npm run build
