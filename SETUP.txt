@@ -5,7 +5,8 @@
 A step-by-step guide to set up and run the Smart Campus Digital System
 (MERN stack: MongoDB, Express, React, Node.js) on a Windows laptop.
 
-
+kill -9 135251 
+   
 ================================================================================
   TABLE OF CONTENTS
 ================================================================================

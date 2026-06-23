@@ -12,6 +12,9 @@ const NavigationPlace = require('../models/NavigationPlace');
 const NavigationHistory = require('../models/NavigationHistory');
 const LostFoundItem = require('../models/LostFoundItem');
 const LostFoundClaim = require('../models/LostFoundClaim');
+const Room = require('../models/Room');
+const RoomBooking = require('../models/RoomBooking');
+const RoomIssue = require('../models/RoomIssue');
 
 async function seed() {
   await connectDB();
@@ -29,6 +32,9 @@ async function seed() {
     Notice.deleteMany({}),
     Subject.deleteMany({}),
     User.deleteMany({}),
+    RoomIssue.deleteMany({}),
+    RoomBooking.deleteMany({}),
+    Room.deleteMany({}),
   ]);
 
   const hash = (pw) => bcrypt.hashSync(pw, 10);
@@ -239,6 +245,77 @@ async function seed() {
     { name: 'Back Gate', block: 'North Campus', floor: 'Ground', description: 'Back Entrance of the Campus', landmark_hint: 'Near the Boys Hostel, north side', directions_from_gate: '1. Enter from Main Gate\n2. Walk straight 120m through the entire campus\n3. Pass the Sports Ground and Boys Hostel\n4. Back Gate is at the north end, behind Boys Hostel', map_x: 80, map_y: 5, category: 'Entrance' },
   ];
   await NavigationPlace.insertMany(places);
+
+  console.log('Seeding rooms...');
+  const roomData = [
+    { name: 'J101', block: 'J Block', floor: 'Ground', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'Smart Board', 'WiFi'], equipment: ['Computer', 'Speaker System'], description: 'Standard classroom on the ground floor of J Block' },
+    { name: 'J102', block: 'J Block', floor: 'Ground', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'Smart Board', 'WiFi'], equipment: ['Computer', 'Speaker System'], description: 'Standard classroom next to J101' },
+    { name: 'J103', block: 'J Block', floor: 'Ground', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Standard classroom opposite the staircase' },
+    { name: 'J104', block: 'J Block', floor: 'First', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'Smart Board', 'WiFi'], equipment: ['Computer', 'Speaker System'], description: 'First floor classroom above J101' },
+    { name: 'J105', block: 'J Block', floor: 'First', capacity: 45, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'First floor classroom next to J104' },
+    { name: 'J106', block: 'J Block', floor: 'First', capacity: 45, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'First floor classroom opposite J105' },
+    { name: 'J107', block: 'J Block', floor: 'Second', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'Smart Board', 'WiFi'], equipment: ['Computer', 'Speaker System'], description: 'Second floor classroom above J104' },
+    { name: 'J108', block: 'J Block', floor: 'Second', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Second floor classroom next to J107' },
+    { name: 'J109', block: 'J Block', floor: 'Second', capacity: 45, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Second floor classroom at end of corridor' },
+    { name: 'J110', block: 'J Block', floor: 'Second', capacity: 45, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Second floor classroom opposite J109' },
+    { name: 'A101', block: 'A Block', floor: 'Ground', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'Smart Board', 'WiFi'], equipment: ['Computer', 'Speaker System'], description: 'Ground floor classroom in A Block left wing' },
+    { name: 'A102', block: 'A Block', floor: 'Ground', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Ground floor classroom next to A101' },
+    { name: 'A103', block: 'A Block', floor: 'First', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'Smart Board', 'WiFi'], equipment: ['Computer', 'Speaker System'], description: 'First floor classroom above A101' },
+    { name: 'A104', block: 'A Block', floor: 'First', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'First floor classroom next to A103' },
+    { name: 'A105', block: 'A Block', floor: 'First', capacity: 45, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'First floor classroom at end of corridor' },
+    { name: 'A106', block: 'A Block', floor: 'Second', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Second floor classroom above A103' },
+    { name: 'A107', block: 'A Block', floor: 'Second', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Second floor classroom next to A106' },
+    { name: 'A108', block: 'A Block', floor: 'Second', capacity: 45, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Second floor classroom opposite staircase' },
+    { name: 'A109', block: 'A Block', floor: 'Second', capacity: 45, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Second floor classroom at far end' },
+    { name: 'A110', block: 'A Block', floor: 'Third', capacity: 30, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Top floor classroom in A Block' },
+    { name: 'B101', block: 'B Block', floor: 'Ground', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'Smart Board', 'WiFi'], equipment: ['Computer', 'Speaker System'], description: 'Ground floor classroom behind Admin Office' },
+    { name: 'B102', block: 'B Block', floor: 'Ground', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Ground floor classroom next to B101' },
+    { name: 'B103', block: 'B Block', floor: 'Ground', capacity: 45, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Ground floor classroom opposite lounge' },
+    { name: 'B104', block: 'B Block', floor: 'First', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'Smart Board', 'WiFi'], equipment: ['Computer', 'Speaker System'], description: 'First floor classroom above B101' },
+    { name: 'B105', block: 'B Block', floor: 'First', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'First floor classroom next to B104' },
+    { name: 'B106', block: 'B Block', floor: 'First', capacity: 45, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'First floor classroom at end of corridor' },
+    { name: 'B107', block: 'B Block', floor: 'Second', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Second floor classroom above B104' },
+    { name: 'B108', block: 'B Block', floor: 'Second', capacity: 60, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Second floor classroom next to B107' },
+    { name: 'B109', block: 'B Block', floor: 'Second', capacity: 45, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Second floor classroom near terrace' },
+    { name: 'B110', block: 'B Block', floor: 'Second', capacity: 45, room_type: 'Classroom', facilities: ['Projector', 'AC', 'WiFi'], equipment: ['Computer'], description: 'Second floor classroom opposite B109' },
+    { name: 'Computer Lab 1', block: 'J Block', floor: 'Ground', capacity: 60, room_type: 'Lab', facilities: ['AC', 'WiFi', 'Workstations'], equipment: ['60 Desktop PCs', 'Projector', 'Server Rack'], description: 'Computer lab with 60 workstations' },
+    { name: 'Computer Lab 2', block: 'J Block', floor: 'First', capacity: 40, room_type: 'Lab', facilities: ['AC', 'WiFi', 'Workstations'], equipment: ['40 Desktop PCs', 'Projector', 'Server Rack'], description: 'Advanced computing lab with 40 workstations' },
+    { name: 'Electronics Lab', block: 'A Block', floor: 'Ground', capacity: 30, room_type: 'Lab', facilities: ['AC', 'Workbenches'], equipment: ['Oscilloscopes', 'Function Generators', 'Power Supplies', 'Soldering Stations'], description: 'Electronics and circuit lab' },
+    { name: 'Physics Lab', block: 'Central Block', floor: 'First', capacity: 30, room_type: 'Lab', facilities: ['AC', 'Workbenches'], equipment: ['Optical Benches', 'Laser Setup', 'Measurement Instruments'], description: 'Physics laboratory with experimental setups' },
+    { name: 'Chemistry Lab', block: 'Central Block', floor: 'First', capacity: 30, room_type: 'Lab', facilities: ['Ventilation', 'Safety Equipment'], equipment: ['Fume Hoods', 'Spectrophotometer', 'Glassware Set'], description: 'Chemistry laboratory with safety equipment' },
+    { name: 'Seminar Hall 1', block: 'Central Block', floor: 'First', capacity: 100, room_type: 'Seminar Hall', facilities: ['Projector', 'AC', 'Stage', 'Sound System', 'WiFi'], equipment: ['Wireless Microphones', 'Conference Camera', 'Presentation Remote'], description: 'Main seminar hall with 100 seats' },
+    { name: 'Seminar Hall 2', block: 'Central Block', floor: 'First', capacity: 80, room_type: 'Seminar Hall', facilities: ['Projector', 'AC', 'Sound System', 'WiFi'], equipment: ['Wireless Microphones', 'Presentation Remote'], description: 'Secondary seminar hall with 80 seats' },
+    { name: 'Auditorium', block: 'Central Block', floor: 'Ground', capacity: 500, room_type: 'Lecture Hall', facilities: ['Projector', 'AC', 'Stage', 'Sound System', 'Lighting', 'WiFi', 'Green Room'], equipment: ['Wireless Microphones', 'Professional Sound System', 'Stage Lighting', 'Large Projection Screen'], description: 'Main auditorium seating 500 with full AV setup' },
+  ];
+  const rooms = await Room.insertMany(roomData);
+
+  const roomMap = {};
+  for (const r of rooms) {
+    roomMap[r.name] = r._id;
+  }
+
+  console.log('Seeding room bookings...');
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const dateStr = tomorrow.toISOString().split('T')[0];
+  const bookingData = [
+    { room_id: roomMap['J101'], booked_by: facultyIds[0], title: 'Extra DS Tutorial', purpose: 'Extra tutorial session for slow learners', date: dateStr, start_time: '16:00', end_time: '17:30', status: 'Approved' },
+    { room_id: roomMap['Seminar Hall 1'], booked_by: facultyIds[2], title: 'Web Development Workshop', purpose: 'Workshop on React.js for final year students', date: dateStr, start_time: '14:00', end_time: '16:00', status: 'Pending' },
+    { room_id: roomMap['A101'], booked_by: facultyIds[3], title: 'ECE Project Review', purpose: 'Project progress review meeting', date: dateStr, start_time: '15:00', end_time: '16:30', status: 'Approved' },
+    { room_id: roomMap['Computer Lab 1'], booked_by: facultyIds[1], title: 'Python Practice Session', purpose: 'Extra lab practice for Algorithms students', date: dateStr, start_time: '17:00', end_time: '18:30', status: 'Pending' },
+  ];
+  await RoomBooking.insertMany(bookingData);
+
+  console.log('Seeding room issues...');
+  const issueData = [
+    { room_id: roomMap['J103'], reported_by: facultyIds[0], category: 'Equipment', description: 'Projector bulb is dim and flickering during classes', priority: 'High', status: 'Open' },
+    { room_id: roomMap['A105'], reported_by: studentIds[0], category: 'Furniture', description: 'Three chairs in the back row are broken', priority: 'Medium', status: 'Open' },
+    { room_id: roomMap['Computer Lab 1'], reported_by: facultyIds[1], category: 'Equipment', description: 'Workstation #12 has a dead monitor', priority: 'High', status: 'In Progress' },
+    { room_id: roomMap['B101'], reported_by: studentIds[5], category: 'Cleaning', description: 'Classroom needs cleaning - dust accumulation on desks', priority: 'Low', status: 'Open' },
+    { room_id: roomMap['J104'], reported_by: facultyIds[2], category: 'Electrical', description: 'One of the ceiling lights is not working', priority: 'Medium', status: 'Resolved', resolved_by: adminIds[0], resolved_at: new Date(), resolution_notes: 'Replaced the faulty tube light' },
+    { room_id: roomMap['A102'], reported_by: facultyIds[3], category: 'Plumbing', description: 'Sink in the prep room is leaking', priority: 'Medium', status: 'Closed', resolved_by: adminIds[1], resolved_at: new Date(), resolution_notes: 'Fixed the pipe joint' },
+  ];
+  await RoomIssue.insertMany(issueData);
 
   console.log('Seeding lost & found items...');
   const now = new Date();

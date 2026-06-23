@@ -14,7 +14,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "5000:5000"
+      - "5001:5000"
     environment:
       - MONGO_URI=mongodb://mongo:27017/smart_campus
       - JWT_SECRET=smart_campus_jwt_secret_key_2024

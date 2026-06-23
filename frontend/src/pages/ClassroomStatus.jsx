@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Search, Clock, Calendar, CheckCircle2, XCircle } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Search, Clock, Calendar, CheckCircle2, XCircle, Download, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react'
 import api from '../utils/axios'
 import toast from 'react-hot-toast'
 
@@ -7,14 +7,31 @@ export default function ClassroomStatus() {
   const [room, setRoom] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
+  const [timelineData, setTimelineData] = useState(null)
+  const [loadingTimeline, setLoadingTimeline] = useState(false)
+  const [autoRefresh, setAutoRefresh] = useState(false)
+  const [showTimeline, setShowTimeline] = useState(false)
+  const intervalRef = useRef(null)
 
   const handleSearch = async (e) => {
-    e.preventDefault()
+    e?.preventDefault()
     if (!room.trim()) { toast.error('Enter a classroom number'); return }
+    const roomNo = room.trim().toUpperCase()
     setLoading(true)
     try {
-      const res = await api.get(`/classroom/status?room=${room.trim().toUpperCase()}`)
+      const res = await api.get(`/classroom/status?room=${roomNo}`)
       setResult(res.data)
+      // Also fetch timeline
+      setLoadingTimeline(true)
+      try {
+        const tl = await api.get(`/rooms/data/timeline?room=${roomNo}`)
+        setTimelineData(tl.data)
+        setShowTimeline(true)
+      } catch {
+        // timeline is secondary
+      } finally {
+        setLoadingTimeline(false)
+      }
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to fetch status')
     } finally {
@@ -22,9 +39,67 @@ export default function ClassroomStatus() {
     }
   }
 
+  const fetchStatusOnly = useCallback(async () => {
+    if (!room.trim()) return
+    try {
+      const res = await api.get(`/classroom/status?room=${room.trim().toUpperCase()}`)
+      setResult(res.data)
+    } catch {
+      // silent on auto-refresh
+    }
+  }, [room])
+
+  useEffect(() => {
+    if (autoRefresh) {
+      intervalRef.current = setInterval(fetchStatusOnly, 15000)
+    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [autoRefresh, fetchStatusOnly])
+
+  const exportSchedule = async () => {
+    if (!room.trim()) { toast.error('Search a room first'); return }
+    try {
+      const res = await api.get(`/rooms/data/export?room=${room.trim().toUpperCase()}`, { responseType: 'blob' })
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }))
+      const a = document.createElement('a')
+      a.href = url; a.download = `schedule_${room.trim().toUpperCase()}.csv`; a.click()
+      URL.revokeObjectURL(url)
+      toast.success('Schedule exported')
+    } catch {
+      toast.error('Failed to export')
+    }
+  }
+
+  const getTimelineEntryStyle = (entry) => {
+    if (!timelineData) return ''
+    const cs = timeToMinutes(entry.start_time)
+    const ce = timeToMinutes(entry.end_time)
+    const cm = timeToMinutes(timelineData.current_time)
+    if (cm >= cs && cm < ce) return 'bg-green-100 border-green-300 ring-2 ring-green-400'
+    if (ce <= cm) return 'bg-gray-50 border-gray-200 text-gray-400'
+    return 'bg-blue-50 border-blue-200'
+  }
+
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Classroom Status</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Classroom Status</h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+              autoRefresh ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${autoRefresh ? 'animate-spin' : ''}`} />
+            Auto (15s)
+          </button>
+          <button onClick={exportSchedule}
+            className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 text-xs font-medium">
+            <Download className="w-3.5 h-3.5" /> Export CSV
+          </button>
+        </div>
+      </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
         <form onSubmit={handleSearch} className="flex gap-3">
@@ -126,8 +201,72 @@ export default function ClassroomStatus() {
               </div>
             </div>
           )}
+
+          {/* Full Day Timeline */}
+          {timelineData && (
+            <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <button
+                onClick={() => setShowTimeline(!showTimeline)}
+                className="flex items-center justify-between w-full text-left"
+              >
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Full Day Timeline — {timelineData.day}
+                  <span className="text-xs font-normal text-gray-400 ml-2">({timelineData.total} classes)</span>
+                </h3>
+                {showTimeline ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+              </button>
+              {showTimeline && (
+                <div className="mt-4 space-y-2">
+                  {timelineData.past?.length === 0 && !timelineData.current && timelineData.upcoming?.length === 0 && (
+                    <p className="text-sm text-gray-400 text-center py-4">No classes scheduled today</p>
+                  )}
+                  {timelineData.current && (
+                    <div className={`p-3 rounded-lg border text-sm ${getTimelineEntryStyle(timelineData.current)}`}>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-green-800 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> NOW
+                        </span>
+                        <span className="text-green-700 font-medium">{timelineData.current.start_time} - {timelineData.current.end_time}</span>
+                      </div>
+                      <p className="font-medium text-gray-900 mt-1">{timelineData.current.subject_name}</p>
+                      <p className="text-xs text-gray-500">{timelineData.current.faculty_name} · {timelineData.current.section}</p>
+                    </div>
+                  )}
+                  {timelineData.upcoming?.map((entry, idx) => (
+                    <div key={`up-${idx}`} className={`p-3 rounded-lg border text-sm ${getTimelineEntryStyle(entry)}`}>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-900">{entry.subject_name}</span>
+                        <span className="text-blue-700 font-medium">{entry.start_time} - {entry.end_time}</span>
+                      </div>
+                      <p className="text-xs text-gray-500">{entry.faculty_name} · {entry.section}</p>
+                    </div>
+                  ))}
+                  {timelineData.past?.map((entry, idx) => (
+                    <div key={`past-${idx}`} className={`p-3 rounded-lg border text-sm ${getTimelineEntryStyle(entry)}`}>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-500">{entry.subject_name}</span>
+                        <span className="text-gray-400">{entry.start_time} - {entry.end_time}</span>
+                      </div>
+                      <p className="text-xs text-gray-400">{entry.faculty_name} · {entry.section}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {loadingTimeline && (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-700 mx-auto"></div>
+            </div>
+          )}
         </div>
       )}
     </div>
   )
+}
+
+function timeToMinutes(t) {
+  const [h, m] = t.split(':').map(Number)
+  return h * 60 + m
 }

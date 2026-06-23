@@ -38,7 +38,10 @@ smart-campus-digital-system/
 │   │   ├── NavigationHistory.js
 │   │   ├── LostFoundItem.js
 │   │   ├── LostFoundClaim.js
-│   │   └── Marks.js
+│   │   ├── Marks.js
+│   │   ├── Room.js
+│   │   ├── RoomBooking.js
+│   │   └── RoomIssue.js
 │   ├── routes/             # Express route definitions
 │   ├── uploads/
 │   │   └── lost-found/     # Uploaded item images
@@ -89,12 +92,48 @@ Three user roles with role-specific login:
 
 **Student**: View personal timetable, attendance percentage, marks/grades, notices.
 
-### 3. Classroom Status
+### 3. Classroom Status & Room Management
 
-Real-time classroom lookup. Search any room number to see:
+Real-time classroom lookup and comprehensive room management. Search any room number to see:
 - Currently running class (subject, faculty, time, section) with green badge
 - "Classroom Available" status with gray badge when free
 - Upcoming classes for the rest of the day
+- **Full Day Timeline** — Past, current, and upcoming classes in a visual timeline view
+- **Auto-Refresh** — Toggle 15-second auto-refresh for live status updates
+- **CSV Export** — Download the room's weekly schedule as a CSV file
+
+#### Room Dashboard
+
+An at-a-glance view of all rooms on campus showing:
+- Total rooms, currently occupied, and available counts
+- Per-room cards with current status (occupied/free), capacity, facilities
+- Filter by block, room type, or search by name
+- Color-coded block indicators and maintenance alerts
+
+#### Room Booking
+
+Request and manage room bookings for extra sessions:
+- Book rooms with title, purpose, date, and time slot
+- Overlap detection prevents double-booking
+- Approval workflow: Admin can approve/reject; users can cancel their own pending bookings
+- View your bookings with status badges (Pending/Approved/Rejected/Cancelled)
+
+#### Room Issue Reporting
+
+Report and track maintenance issues per room:
+- Report issues by category (Electrical, Plumbing, Furniture, Equipment, Cleaning, Other)
+- Set priority (Low/Medium/High/Critical)
+- Admin workflow: Open → In Progress → Resolved → Closed
+- Resolution notes and resolver tracking
+
+#### Room Utilization Analytics
+
+Visual analytics with Recharts bar charts:
+- Utilization percentage per room (weekly usage vs available time)
+- Average utilization across all rooms
+- High/low usage room counts
+- Sortable table with capacity, weekly slots, and utilization bars
+- CSV export of utilization data
 
 ### 4. Campus Navigation
 
@@ -195,6 +234,48 @@ The system uses **MongoDB** with **Mongoose ODM**. Each table is a Mongoose mode
 | `deactivated_at` | Date | |
 | `updated_by` | ObjectId (ref User) | |
 
+### Room (`Room.js`)
+| Field | Mongoose Type | Notes |
+|-------|---------------|-------|
+| `name` | String | Unique, uppercase (e.g. J101) |
+| `block` | String | J Block, A Block, B Block, Central Block |
+| `floor` | String | Ground, First, Second, Third |
+| `capacity` | Number | Seating capacity |
+| `room_type` | String (enum) | Classroom, Lab, Seminar Hall, Lecture Hall, Conference Room |
+| `facilities` | [String] | Projector, AC, Smart Board, WiFi, etc. |
+| `equipment` | [String] | Computer, Speaker System, etc. |
+| `status` | String (enum) | Active, Maintenance, Closed |
+| `description` | String | |
+
+### RoomBooking (`RoomBooking.js`)
+| Field | Mongoose Type | Notes |
+|-------|---------------|-------|
+| `room_id` | ObjectId (ref Room) | |
+| `booked_by` | ObjectId (ref User) | |
+| `title` | String | Required |
+| `purpose` | String | |
+| `date` | String | YYYY-MM-DD |
+| `start_time` | String | HH:MM |
+| `end_time` | String | HH:MM |
+| `status` | String (enum) | Pending, Approved, Rejected, Cancelled, Completed |
+| `remarks` | String | Admin review remarks |
+| `reviewed_by` | ObjectId (ref User) | |
+| `reviewed_at` | Date | |
+
+### RoomIssue (`RoomIssue.js`)
+| Field | Mongoose Type | Notes |
+|-------|---------------|-------|
+| `room_id` | ObjectId (ref Room) | |
+| `reported_by` | ObjectId (ref User) | |
+| `category` | String (enum) | Electrical, Plumbing, Furniture, Equipment, Cleaning, Other |
+| `description` | String | Required |
+| `priority` | String (enum) | Low, Medium, High, Critical |
+| `status` | String (enum) | Open, In Progress, Resolved, Closed |
+| `image_path` | String | |
+| `resolved_at` | Date | |
+| `resolved_by` | ObjectId (ref User) | |
+| `resolution_notes` | String | |
+
 ### All Models
 - **User** → `backend/models/User.js`
 - **Subject** → `backend/models/Subject.js`
@@ -207,6 +288,9 @@ The system uses **MongoDB** with **Mongoose ODM**. Each table is a Mongoose mode
 - **LostFoundItem** → `backend/models/LostFoundItem.js`
 - **LostFoundClaim** → `backend/models/LostFoundClaim.js`
 - **Marks** → `backend/models/Marks.js`
+- **Room** → `backend/models/Room.js`
+- **RoomBooking** → `backend/models/RoomBooking.js`
+- **RoomIssue** → `backend/models/RoomIssue.js`
 
 ---
 
@@ -238,6 +322,27 @@ The system uses **MongoDB** with **Mongoose ODM**. Each table is a Mongoose mode
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | GET | `/api/classroom/status?room=` | Yes | Current status + upcoming today |
+
+### Rooms
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/rooms` | Yes | List rooms (filter by block, floor, room_type, status) |
+| GET | `/api/rooms/:id` | Yes | Get room by ID |
+| POST | `/api/rooms` | Admin | Create room |
+| PUT | `/api/rooms/:id` | Admin | Update room |
+| DELETE | `/api/rooms/:id` | Admin | Delete room |
+| GET | `/api/rooms/data/dashboard` | Yes | All rooms with current occupancy status |
+| GET | `/api/rooms/data/timeline?room=` | Yes | Full day timeline (past, current, upcoming) |
+| GET | `/api/rooms/data/utilization` | Yes | Weekly utilization analytics per room |
+| GET | `/api/rooms/data/export?room=` | Yes | CSV export of room schedule |
+| POST | `/api/rooms/bookings` | Yes | Create booking request |
+| GET | `/api/rooms/bookings/mine` | Yes | Current user's bookings |
+| GET | `/api/rooms/bookings/all` | Admin | All bookings (filter by status, room_id, date) |
+| PATCH | `/api/rooms/bookings/:id/review` | Admin | Approve/reject booking |
+| PATCH | `/api/rooms/bookings/:id/cancel` | Yes | Cancel own booking |
+| POST | `/api/rooms/issues` | Yes | Report an issue |
+| GET | `/api/rooms/issues` | Yes | List issues (filter by status, room_id, priority) |
+| PATCH | `/api/rooms/issues/:id/status` | Admin | Update issue status |
 
 ### Navigation
 | Method | Endpoint | Auth | Description |
@@ -390,16 +495,19 @@ After running `npm run seed`:
 
 The seed script populates:
 
-- **22 users**: 2 admins, 5 faculty, 15 students (10 CSE + 10 ECE... actually 10 CSE + 10 ECE = 20 students + 2 admins + 5 faculty = 22 unique seeded users, corrected: 20 students total — 10 CSE + 10 ECE)
-- **6 subjects**: Data Structures, Algorithms, Web Development, Digital Electronics, Signal Processing, Embedded Systems
+- **22 users**: 2 admins, 5 faculty, 20 students (10 CSE + 10 ECE)
+- **16 subjects**: Data Structures, Algorithms, Web Development, Digital Electronics, Signal Processing, Embedded Systems, Programming Fundamentals, OOP, DBMS, Computer Networks, Project Work, Basic Electronics, Circuit Analysis, Microprocessors, VLSI Design
 - **40+ timetable entries**: Across J Block, A Block, B Block rooms for all 5 weekdays
 - **5 historical timetable entries**: Deactivated/old versions
-- **30+ navigation places**: All classrooms (J101–J110, A101–A110, B101–B110), Library, Labs, Offices, Canteen, Auditorium, Hostels, etc.
-- **18 lost & found items**: 10 lost items, 8 found items (mix of Active, Claimed, Expired statuses)
+- **38 rooms**: 30 classrooms (J101–J110, A101–A110, B101–B110), 5 labs (Computer Lab 1–2, Electronics, Physics, Chemistry), 2 seminar halls, 1 auditorium — each with capacity, facilities, and equipment data
+- **4 room bookings**: 2 approved, 2 pending — for extra tutorials, workshops, project reviews
+- **6 room issues**: Mix of Open, In Progress, Resolved, Closed — covering equipment, furniture, cleaning, electrical, and plumbing categories
+- **30+ navigation places**: All classrooms, Library, Labs, Offices, Canteen, Auditorium, Hostels, etc.
+- **18 lost & found items**: 10 lost, 8 found (Active, Claimed, Expired)
 - **3 claims**: 1 pending, 1 approved, 1 rejected
-- **30 days of attendance** per student per subject
+- **30 days of attendance** per student per subject (~400k records)
 - **12 notices** across all categories
-- **Marks** for all students
+- **Marks** for all students (Mid, Final, Assignment per subject)
 
 ---
 
