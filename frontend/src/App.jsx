@@ -33,11 +33,6 @@ import StudentProfile from './pages/student/Profile'
 import StudentMarks from './pages/student/Marks'
 
 // Shared pages
-import ClassroomStatus from './pages/ClassroomStatus'
-import RoomDashboard from './pages/RoomDashboard'
-import RoomBooking from './pages/RoomBooking'
-import RoomIssues from './pages/RoomIssues'
-import RoomAnalytics from './pages/RoomAnalytics'
 import CampusNavigation from './pages/CampusNavigation'
 import LostFound from './pages/LostFound'
 
@@ -62,11 +57,6 @@ export default function App() {
         <Route path="timetable" element={<AdminTimetable />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="marks" element={<AdminMarks />} />
-        <Route path="classroom-status" element={<ClassroomStatus />} />
-        <Route path="room-dashboard" element={<RoomDashboard />} />
-        <Route path="room-booking" element={<RoomBooking />} />
-        <Route path="room-issues" element={<RoomIssues />} />
-        <Route path="room-analytics" element={<RoomAnalytics />} />
         <Route path="navigation-history" element={<AdminNavigationHistory />} />
         <Route path="lost-found" element={<AdminLostFoundPanel />} />
       </Route>
@@ -78,11 +68,6 @@ export default function App() {
         <Route path="marks" element={<FacultyMarks />} />
         <Route path="notices" element={<FacultyNotices />} />
         <Route path="students" element={<FacultyStudents />} />
-        <Route path="classroom-status" element={<ClassroomStatus />} />
-        <Route path="room-dashboard" element={<RoomDashboard />} />
-        <Route path="room-booking" element={<RoomBooking />} />
-        <Route path="room-issues" element={<RoomIssues />} />
-        <Route path="room-analytics" element={<RoomAnalytics />} />
         <Route path="navigation" element={<CampusNavigation />} />
         <Route path="lost-found" element={<LostFound />} />
       </Route>
@@ -95,11 +80,6 @@ export default function App() {
         <Route path="marks" element={<StudentMarks />} />
         <Route path="notices" element={<StudentNotices />} />
         <Route path="profile" element={<StudentProfile />} />
-        <Route path="classroom-status" element={<ClassroomStatus />} />
-        <Route path="room-dashboard" element={<RoomDashboard />} />
-        <Route path="room-booking" element={<RoomBooking />} />
-        <Route path="room-issues" element={<RoomIssues />} />
-        <Route path="room-analytics" element={<RoomAnalytics />} />
         <Route path="navigation" element={<CampusNavigation />} />
         <Route path="lost-found" element={<LostFound />} />
       </Route>

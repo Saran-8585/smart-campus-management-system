@@ -12,11 +12,9 @@ const timetableRoutes = require('./routes/timetable');
 const attendanceRoutes = require('./routes/attendance');
 const noticesRoutes = require('./routes/notices');
 const reportsRoutes = require('./routes/reports');
-const classroomRoutes = require('./routes/classroom');
 const navigationRoutes = require('./routes/navigation');
 const lostFoundRoutes = require('./routes/lostfound');
 const marksRoutes = require('./routes/marks');
-const roomRoutes = require('./routes/room');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,11 +30,9 @@ app.use('/api/timetable', timetableRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/notices', noticesRoutes);
 app.use('/api/reports', reportsRoutes);
-app.use('/api/classroom', classroomRoutes);
 app.use('/api/navigation', navigationRoutes);
 app.use('/api/lost-found', lostFoundRoutes);
 app.use('/api/marks', marksRoutes);
-app.use('/api/rooms', roomRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

@@ -1,34 +1,20 @@
 import { useState, useEffect } from 'react'
-import { BookOpen, Calendar, ClipboardCheck, Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { BookOpen, Loader2 } from 'lucide-react'
 import api from '../../utils/axios'
 import StatCard from '../../components/StatCard'
-import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
 
-const dayMap = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday' }
-
 export default function FacultyDashboard() {
-  const { user } = useAuth()
   const [subjects, setSubjects] = useState([])
-  const [timetable, setTimetable] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      api.get('/subjects'),
-      api.get('/timetable'),
-    ])
-      .then(([subs, tt]) => {
-        setSubjects(subs.data)
-        setTimetable(tt.data)
-      })
+    api.get('/subjects')
+      .then((res) => setSubjects(res.data))
       .catch(() => toast.error('Failed to load dashboard data'))
       .finally(() => setLoading(false))
   }, [])
-
-  const today = dayMap[new Date().getDay()] || 'Monday'
-  const todayClasses = timetable.filter((t) => t.day === today)
 
   if (loading) {
     return (
@@ -42,35 +28,11 @@ export default function FacultyDashboard() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Faculty Dashboard</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-1 gap-4 mb-8">
         <StatCard icon={BookOpen} label="My Subjects" value={subjects.length} color="blue" />
-        <StatCard icon={Calendar} label="Weekly Classes" value={timetable.length} color="green" />
-        <StatCard icon={ClipboardCheck} label="Today's Classes" value={todayClasses.length} color="purple" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Today's Classes ({today})</h2>
-          {todayClasses.length === 0 ? (
-            <p className="text-gray-400 text-center py-6">No classes scheduled for today</p>
-          ) : (
-            <div className="space-y-3">
-              {todayClasses.map((c) => (
-                <div key={c.id} className="bg-primary-50 rounded-lg p-3 flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-primary-800">{c.subject_name}</p>
-                    <p className="text-sm text-primary-600">{c.start_time} - {c.end_time} | Room {c.room}</p>
-                  </div>
-                  <Link to="/faculty/attendance"
-                    className="text-sm text-primary-700 hover:text-primary-900 font-medium">
-                    Mark Attendance
-                  </Link>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">My Subjects</h2>
           {subjects.length === 0 ? (

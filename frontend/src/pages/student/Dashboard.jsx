@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Calendar, ClipboardCheck, Bell, Loader2 } from 'lucide-react'
+import { ClipboardCheck, Bell, Loader2 } from 'lucide-react'
 import api from '../../utils/axios'
 import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
 
-const dayMap = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday' }
 const categoryColors = {
   Exam: 'bg-red-100 text-red-700',
   Event: 'bg-blue-100 text-blue-700',
@@ -14,7 +13,6 @@ const categoryColors = {
 
 export default function StudentDashboard() {
   const { user } = useAuth()
-  const [timetable, setTimetable] = useState([])
   const [attendance, setAttendance] = useState([])
   const [notices, setNotices] = useState([])
   const [loading, setLoading] = useState(true)
@@ -22,21 +20,16 @@ export default function StudentDashboard() {
   useEffect(() => {
     if (!user) return
     Promise.all([
-      api.get('/timetable'),
       api.get(`/attendance/student/${user.id}`),
       api.get('/notices'),
     ])
-      .then(([tt, att, not]) => {
-        setTimetable(tt.data)
+      .then(([att, not]) => {
         setAttendance(att.data)
         setNotices(not.data.slice(0, 5))
       })
       .catch(() => toast.error('Failed to load dashboard data'))
       .finally(() => setLoading(false))
   }, [user?.id])
-
-  const today = dayMap[new Date().getDay()] || 'Monday'
-  const todayClasses = timetable.filter((t) => t.day === today)
 
   const attBySubject = {}
   attendance.forEach((a) => {
@@ -64,16 +57,7 @@ export default function StudentDashboard() {
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome, {user?.name}!</h1>
       <p className="text-gray-500 mb-6">Here's your academic overview</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500 font-medium">Today's Classes</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{todayClasses.length}</p>
-            </div>
-            <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center"><Calendar className="w-6 h-6 text-blue-700" /></div>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center justify-between">
             <div>
@@ -95,28 +79,6 @@ export default function StudentDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Today's Timetable ({today})</h2>
-          {todayClasses.length === 0 ? (
-            <p className="text-gray-400 text-center py-6">No classes today</p>
-          ) : (
-            <div className="space-y-2">
-              {todayClasses.map((c) => (
-                <div key={c.id} className="bg-blue-50 rounded-lg p-3 flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-blue-800">{c.subject_name}</p>
-                    <p className="text-sm text-blue-600">{c.faculty_name}</p>
-                  </div>
-                  <div className="text-right text-sm text-blue-600">
-                    <p>{c.start_time} - {c.end_time}</p>
-                    <p>Room {c.room}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Attendance per Subject</h2>
           {attPercentages.length === 0 ? (

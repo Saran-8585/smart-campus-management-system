@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, BookOpen, Bell, Calendar, BarChart3,
   ClipboardCheck, GraduationCap, UserCircle, LogOut, Menu, X,
-  ChevronRight, Map, MapPin, Package, Clock, Building2, CalendarCheck, Wrench, BarChart4
+  ChevronRight, Map, MapPin, Package
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
  
@@ -16,11 +16,6 @@ const roleMenus = {
     { label: 'Notices', path: '/admin/notices', icon: Bell },
     { label: 'Timetable', path: '/admin/timetable', icon: Calendar },
     { label: 'Reports', path: '/admin/reports', icon: ClipboardCheck },
-    { label: 'Classroom Status', path: '/admin/classroom-status', icon: Clock },
-    { label: 'Room Dashboard', path: '/admin/room-dashboard', icon: Building2 },
-    { label: 'Room Booking', path: '/admin/room-booking', icon: CalendarCheck },
-    { label: 'Room Issues', path: '/admin/room-issues', icon: Wrench },
-    { label: 'Room Analytics', path: '/admin/room-analytics', icon: BarChart4 },
     { label: 'Navigation History', path: '/admin/navigation-history', icon: Map },
     { label: 'Lost & Found', path: '/admin/lost-found', icon: Package },
   ],
@@ -30,10 +25,6 @@ const roleMenus = {
     { label: 'Marks', path: '/faculty/marks', icon: BarChart3 },
     { label: 'Notices', path: '/faculty/notices', icon: Bell },
     { label: 'Students', path: '/faculty/students', icon: Users },
-    { label: 'Classroom Status', path: '/faculty/classroom-status', icon: Clock },
-    { label: 'Room Dashboard', path: '/faculty/room-dashboard', icon: Building2 },
-    { label: 'Room Booking', path: '/faculty/room-booking', icon: CalendarCheck },
-    { label: 'Room Issues', path: '/faculty/room-issues', icon: Wrench },
     { label: 'Navigation', path: '/faculty/navigation', icon: Map },
     { label: 'Lost & Found', path: '/faculty/lost-found', icon: Package },
   ],
@@ -44,10 +35,6 @@ const roleMenus = {
     { label: 'Marks', path: '/student/marks', icon: BarChart3 },
     { label: 'Notices', path: '/student/notices', icon: Bell },
     { label: 'Profile', path: '/student/profile', icon: UserCircle },
-    { label: 'Classroom Status', path: '/student/classroom-status', icon: Clock },
-    { label: 'Room Dashboard', path: '/student/room-dashboard', icon: Building2 },
-    { label: 'Room Booking', path: '/student/room-booking', icon: CalendarCheck },
-    { label: 'Room Issues', path: '/student/room-issues', icon: Wrench },
     { label: 'Navigation', path: '/student/navigation', icon: Map },
     { label: 'Lost & Found', path: '/student/lost-found', icon: Package },
   ],
